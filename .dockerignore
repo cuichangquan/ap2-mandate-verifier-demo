@@ -1,0 +1,12 @@
+.git
+log
+tmp
+evidence
+scripts
+vendor
+.bundle
+.env
+.env.*
+*.gem
+*.pem
+*.key

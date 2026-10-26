@@ -1,0 +1,13 @@
+/evidence/
+/scripts/
+/log/
+/tmp/
+/vendor/
+/.bundle/
+/.env
+/.env.*
+*.gem
+*.log
+*.pem
+*.key
+.DS_Store
