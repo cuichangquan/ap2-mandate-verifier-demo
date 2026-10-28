@@ -34,7 +34,7 @@ Ruby／Rails開発者が、購入委任の「検証成功」と「拒否の理�
 
 GitとDocker DesktopまたはDocker Engineを用意し、以下のclone → build → runで起動します。DB・Redis・秘密鍵の準備や、ホストOSへのRuby／Gemのインストールは不要です。
 
-この手順はLinux arm64/v8のイメージを固定して使います。他architectureでの動作は未検証です。また、**この公開Dockerfileからのfresh buildは未実施**です。過去に動作確認した取得コンテナ由来のイメージと区別してください（詳細は「テストと実測範囲」）。
+この手順はLinux arm64/v8のイメージを固定して使います。2026-10-28に、公開Dockerfileを変更せず、アプリbuild cacheを使わないfresh buildを1回確認しました（固定base layerは再利用）。MBA／Linux arm64の一構成に限る機能観測で、他architectureでの動作は未検証です。実行条件と未証明事項は「テストと実測範囲」を参照してください。
 
 初回のビルドは公式Docker HubとRubyGems/CDNからイメージと依存を取得し、native extensionをビルドする場合があります。ネットワーク接続と追加ディスクが必要です。Gemfile.lockの固定条件を緩めず、取得・依存・providerの失敗時は停止してください。
 
@@ -74,7 +74,15 @@ docker run --rm --network none --cpus 1 --memory 512m --pids-limit 128 \
 
 初回ブラウザ確認でno-referrerによるnull Originの422を発見し、same-originへ修正して再テストしました。CSRF保護は有効です。公開準備時に固定のデモ署名値を一時生成へ置き換えました。
 
-今回の実測イメージは、既存のdigest固定Rubyイメージを使う取得コンテナから作成したものです。**この公開Dockerfileからのfresh buildは未実施**です。新規環境でのビルド、他OS/architecture、一般的な本番互換性は検証していません。
+上記2026-10-26の検査は、既存のdigest固定Rubyイメージを使う取得コンテナ由来のイメージで行った履歴です。その時点では公開Dockerfileからのfresh buildは実施していません。
+
+**2026-10-28の限定確認：** main [`7d77723`](https://github.com/cuichangquan/ap2-mandate-verifier-demo/tree/7d77723a1b4e4fdaee06f5b5293990935c317aeb) の公開Dockerfileを変更せず、`--no-cache`でfresh buildを1回（約67秒）、既存テストを1回実行し、**3 tests / 82 assertions / 0 failures / 0 errors**でした。ブラウザでも上の3ケースのstatus/codeとEvidence有無が表どおりであることを確認しました。実行環境はMBA上の既存Docker、Linux arm64、MRI 4.0.9／Bundler 4.0.20／Gem 0.1.0です。
+
+- 固定base layerは再利用しました。RUN処理に2 CPU／2 GiBを指定しましたが、展開・転送等の共有daemon処理は上限外です。
+- 全通信先・通信全量・ピークCPU/RSSは未計測です。通信条件の完全適合を確認した記録ではありません。
+- provenanceのdigest差が未解明のままUI確認へ進めたSTOP判断の逸脱がありました。後に保存layerから公式式でlocal-image cache pinとの一致を確認しましたが、手順判断の問題や通信条件の未証明まで解消したとは扱いません。
+
+これは当該環境での機能再現の記録です。実行条件全体の合格や、他OS/architecture・一般的な本番互換性、署名・SHA・依存の保証拡大を意味しません。
 
 ## 固定した構成
 
