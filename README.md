@@ -2,6 +2,8 @@
 
 Ruby／Rails開発者が、購入委任の「検証成功」と「拒否の理由」をブラウザで比較できる、小さなローカル専用Railsアプリです。[ap2_mandate_verifier 0.1.0](https://rubygems.org/gems/ap2_mandate_verifier/versions/0.1.0) を実際に呼び、正常・改ざん・期限切れの3ケースを試せます。Gemを自分のアプリへ組み込む前に、返される結果と責任境界を確認できます。
 
+実際の3ケースを画面とコードで紹介する[Zennの解説記事](https://zenn.dev/ccq/articles/7f9643f96fe5c7)も公開しています。
+
 **検証成功・Evidenceは購入許可ではありません。** 実決済、注文更新、実Issuer連携、nonce消費や注文CASは行いません。
 
 ![日本語の購入委任検証デモ。3つのシナリオと、検証成功は購入許可ではないという警告](docs/images/overview.jpg)
