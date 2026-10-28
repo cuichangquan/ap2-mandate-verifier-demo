@@ -1,6 +1,6 @@
 # AP2 Mandate Verifier Demo
 
-購入委任の検証を試す、小さなローカル専用Railsアプリです。[ap2_mandate_verifier 0.1.0](https://rubygems.org/gems/ap2_mandate_verifier/versions/0.1.0) を実際に呼び、正常・改ざん・期限切れを比較します。
+Ruby／Rails開発者が、購入委任の「検証成功」と「拒否の理由」をブラウザで比較できる、小さなローカル専用Railsアプリです。[ap2_mandate_verifier 0.1.0](https://rubygems.org/gems/ap2_mandate_verifier/versions/0.1.0) を実際に呼び、正常・改ざん・期限切れの3ケースを試せます。Gemを自分のアプリへ組み込む前に、返される結果と責任境界を確認できます。
 
 **検証成功・Evidenceは購入許可ではありません。** 実決済、注文更新、実Issuer連携、nonce消費や注文CASは行いません。
 
@@ -8,11 +8,13 @@
 
 ## 3つのシナリオ
 
-| 選択 | 実際のGem結果 | Evidence |
-| --- | --- | --- |
-| 正常な購入内容 | verified_research / scoped_research_verified | あり（検証事実のみ） |
-| 購入内容を改ざん | rejected / host_binding_mismatch | なし |
-| 有効期限切れ | rejected / invalid_purchase_time | なし |
+| 選択 | 成功・拒否の理由 | 実際のGem結果 | Evidence |
+| --- | --- | --- | --- |
+| 正常な購入内容 | 合成データが固定profileの検査を通過 | verified_research / scoped_research_verified | あり（検証事実のみ） |
+| 購入内容を改ざん | 購入内容と保存済みHost情報が不一致 | rejected / host_binding_mismatch | なし |
+| 有効期限切れ | 合成デモ時刻が有効期間の条件を満たさない | rejected / invalid_purchase_time | なし |
+
+画面には日本語の結果・理由、Gemのstatus/code、Evidenceの有無、評価した合成時刻を表示します。エラーで検証を完了できない場合は「検証不能」とし、成功や購入許可として扱いません。
 
 正常ケースの実画面です。スクリーンショットは実行中のlocalhost UIを撮影したもので、生成したモック画像ではありません。
 
@@ -28,7 +30,9 @@
 
 ## Dockerで起動
 
-Docker DesktopまたはDocker Engineが必要です。RubyやGemをホストOSへインストールする必要はありません。
+GitとDocker DesktopまたはDocker Engineを用意し、以下のclone → build → runで起動します。DB・Redis・秘密鍵の準備や、ホストOSへのRuby／Gemのインストールは不要です。
+
+この手順はLinux arm64/v8のイメージを固定して使います。他architectureでの動作は未検証です。また、**この公開Dockerfileからのfresh buildは未実施**です。過去に動作確認した取得コンテナ由来のイメージと区別してください（詳細は「テストと実測範囲」）。
 
 初回のビルドは公式Docker HubとRubyGems/CDNからイメージと依存を取得し、native extensionをビルドする場合があります。ネットワーク接続と追加ディスクが必要です。Gemfile.lockの固定条件を緩めず、取得・依存・providerの失敗時は停止してください。
 
@@ -43,7 +47,7 @@ docker run --rm --name ap2-mandate-verifier-demo \
   timeout 3600 bundle exec puma -b tcp://0.0.0.0:3000 -t 1:1 config.ru
 ```
 
-ブラウザで **http://127.0.0.1:3100/** を開き、「Gemで検証する」を押します。ホスト側の公開はlocalhostだけです。コンテナ内部のPumaは0.0.0.0:3000で待受します。最大60分で終了し、`--rm`でコンテナを削除します。
+ブラウザで **http://127.0.0.1:3100/** を開き、正常 → 改ざん → 期限切れの順に選び、それぞれ「Gemで検証する」を押します。上の表と画面の結果・理由を比較してください。ホスト側の公開はlocalhostだけです。コンテナ内部のPumaは0.0.0.0:3000で待受します。最大60分で終了し、`--rm`でコンテナを削除します。
 
 DB、Redis、バックグラウンドサービス、JavaScriptビルドは不要です。セッション署名値は起動時に一時生成し、再起動すると以前のセッションは無効になります。鍵を入力・保存する設定はありません。
 
