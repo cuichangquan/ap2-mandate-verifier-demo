@@ -24,7 +24,7 @@ class ScenarioVerifier
       full["verified_at"] = 1_800_000_101 # Signed mandate exp=1800000100; trusted challenge remains in range.
     end
     inputs = KEYS.to_h { |key| [key.to_sym, full.fetch(key)] }
-    result = AP2MandateVerifier.verify_research(**inputs)
+    result = AP2MandateVerifier.verify_checkout(**inputs)
     title = result.success? ? "検証成功" : (result.rejected? ? "拒否" : "検証不能")
     reason = case result.code
     when :scoped_research_verified then "合成データが固定profileの検査を通過しました。"
