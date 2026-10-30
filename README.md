@@ -1,6 +1,6 @@
 # AP2 Mandate Verifier Demo
 
-Ruby／Rails開発者が、購入委任の「検証成功」と「拒否の理由」をブラウザで比較できる、小さなローカル専用Railsアプリです。[ap2_mandate_verifier 0.2.0](https://rubygems.org/gems/ap2_mandate_verifier/versions/0.2.0) を実際に呼び、正常・改ざん・期限切れの3ケースを試せます。Gemを自分のアプリへ組み込む前に、返される結果と責任境界を確認できます。
+Ruby／Rails開発者が、購入委任の「検証成功」と「拒否の理由」をブラウザで比較できる、小さなローカル専用Railsアプリです。[ap2_mandate_verifier 0.2.1](https://rubygems.org/gems/ap2_mandate_verifier/versions/0.2.1) を実際に呼び、正常・改ざん・期限切れの3ケースを試せます。Gemを自分のアプリへ組み込む前に、返される結果と責任境界を確認できます。
 
 実際の3ケースを画面とコードで紹介する[Zennの解説記事](https://zenn.dev/ccq/articles/7f9643f96fe5c7)も公開しています。
 
@@ -18,7 +18,7 @@ Ruby／Rails開発者が、購入委任の「検証成功」と「拒否の理�
 
 画面には日本語の結果・理由、Gemのstatus/code、Evidenceの有無、評価した合成時刻を表示します。エラーで検証を完了できない場合は「検証不能」とし、成功や購入許可として扱いません。
 
-掲載する2画像は、2026-10-30にGem 0.2.0のfresh buildから起動したlocalhost UIを実ブラウザで撮影したものです。以下は正常ケースの実画面で、生成したモック画像ではありません。
+掲載する2画像は、2026-10-30にGem 0.2.1のfresh buildから起動したlocalhost UIを実ブラウザで撮影したものです。以下は正常ケースの実画面で、生成したモック画像ではありません。
 
 ![正常な合成データが実Gemの検査を通過し、Evidenceありと固定デモ時刻1800000000を表示する画面](docs/images/verified.jpg)
 
@@ -34,7 +34,7 @@ Ruby／Rails開発者が、購入委任の「検証成功」と「拒否の理�
 
 GitとDocker DesktopまたはDocker Engineを用意し、以下のclone → build → runで起動します。DB・Redis・秘密鍵の準備や、ホストOSへのRuby／Gemのインストールは不要です。
 
-この手順はLinux arm64/v8のイメージを固定して使います。2026-10-30にGem 0.2.0で公開Dockerfileを変更せず、アプリの依存build cacheを使わないfresh buildを1回確認しました（固定base layerは再利用）。MBA／Linux arm64の一構成に限る機能観測で、他architectureでの動作は未検証です。cloneの端末依存の制約、実行条件と未証明事項は「テストと実測範囲」を参照してください。
+この手順はLinux arm64/v8のイメージを固定して使います。2026-10-30にGem 0.2.1で公開Dockerfileを変更せず、アプリの依存build cacheを使わないfresh buildを1回確認しました（固定base layerは再利用）。MBA／Linux arm64の一構成に限る機能観測で、他architectureでの動作は未検証です。cloneの端末依存の制約、実行条件と未証明事項は「テストと実測範囲」を参照してください。
 
 初回のビルドは公式Docker HubとRubyGems/CDNからイメージと依存を取得し、native extensionをビルドする場合があります。ネットワーク接続と追加ディスクが必要です。Gemfile.lockの固定条件を緩めず、取得・依存・providerの失敗時は停止してください。
 
@@ -90,7 +90,7 @@ docker run --rm --network none --cpus 1 --memory 512m --pids-limit 128 \
 
 main [`18060d3`](https://github.com/cuichangquan/ap2-mandate-verifier-demo/tree/18060d32880a756432e704fd48f630cb715fff32) の公開Dockerfileを無改変で`--no-cache --pull=false` buildし、08:51:24–08:52:36 UTCの約72秒で成功しました。既存の固定base 7 layerを再利用し、WORKDIRはCACHED表示ですが、依存を取得・インストールするRUNは再実行されています。今回の端末ではcloneがGitのSSH転送／agent認証で失敗したため、公開main全17ファイルとGit blob一致を確認した保存sourceでbuildしました。cloneから一連の手順が完走したという記録ではありません。source取得前に誤って起動した準備buildはDockerfile未存在で即停止し、依存取得はありませんでした。
 
-新しいimageで既存テストを1回実行し、**3 tests / 82 assertions / 0 failures / 0 errors**。Gem 0.2.0の33,280 bytes/SHA256、fixture SHA256、install後のlock一致を再確認しました。環境はLinux arm64、MRI 4.0.9／Bundler 4.0.20／OpenSSL gem 4.0.2・library 3.5.7です。localhostの実ブラウザで正常 → 改ざん → 期限切れを操作し、上表のstatus/code・Evidence有無、0.2.0表示、日本語の理由を確認しました。掲載2画像はこのセッションで更新した実画面です。
+新しいimageで既存テストを1回実行し、**3 tests / 82 assertions / 0 failures / 0 errors**。Gem 0.2.0の33,280 bytes/SHA256、fixture SHA256、install後のlock一致を再確認しました。環境はLinux arm64、MRI 4.0.9／Bundler 4.0.20／OpenSSL gem 4.0.2・library 3.5.7です。localhostの実ブラウザで正常 → 改ざん → 期限切れを操作し、上表のstatus/code・Evidence有無、0.2.0表示、日本語の理由を確認しました。当時の画像はこのセッションで撮影した実画面でした。現在は次の0.2.1実測の画像へ更新しています。
 
 - buildのRUNに2 CPU／2 GiBを指定し、15分・観測ディスク増加2 GiBを停止上限としました。build前後のホスト空き容量差は約127 MiBですが、他プロセスや共有daemonも含む観測値です。
 - image内の取得archiveは44個・10,942,976 bytes。これは索引メタデータ・header・redirect等を含む通信全量ではありません。取得sourceはRubyGems、固定baseは公式Docker Hubを指定しましたが、全通信先・全量・CPU/RSSピーク・実cgroup値は未計測で、完全適合の証明ではありません。
@@ -98,21 +98,31 @@ main [`18060d3`](https://github.com/cuichangquan/ap2-mandate-verifier-demo/tree/
 
 これは今回の一構成での機能観測です。他OS/architecture、実Issuer・実Host、鍵失効、性能・本番利用の確認や保証拡大は含みません。
 
+### 0.2.1への追従と今回の確認（2026-10-30）
+
+公開Gem 0.2.1はRuby 3.4.12対応を加えた保守版ですが、このデモはMRI **4.0.9**のままです。固定5依存・API・profile・Evidence契約は変えません。公式RubyGems APIのSHAと実配布Gem（34,816 bytes、下記SHA256）をinstall前に照合しました。既存main `5237824` の検証済みsourceを使い、Gem指定・archive照合値・画面versionだけを更新したDockerfileを`--no-cache --pull=false`で1回buildし、11:57:08–11:58:25 UTCの約77秒で成功しました。固定base 7 layerを再利用し、依存RUNは再実行されています。
+
+新imageで既存テストを1回実行し、**3 tests / 82 assertions / 0 failures / 0 errors**。Gem/fixture SHA、install後lock一致を確認しました。Linux arm64、MRI 4.0.9／Bundler 4.0.20／OpenSSL gem 4.0.2・library 3.5.7です。localhostの実ブラウザでも正常・改ざん・期限切れが上表のstatus/code・Evidence有無どおりで、0.2.1表示・日本語の理由を確認しました。掲載2画像は今回撮影した実画面で、0.2.0の観測を今回の実測として流用していません。
+
+buildのRUNは2 CPU／2 GiB、15分・観測ディスク増加2 GiBを停止上限とし、テストとpreviewは1 CPU／512 MiB／PIDs128、テストはnetwork none・300秒、previewはlocalhost限定・Puma 1 thread・最大3600秒です。取得archiveは44個・10,944,512 bytesで、メタデータ・header等の通信全量ではありません。公式Docker Hub/RubyGemsを取得元としていますが、全通信先・全量・CPU/RSSピーク・実cgroup値は未計測で、共有daemon処理はRUN資源制限の対象外です。専用container/imageは削除し、共有base/cacheは保持しました。
+
+cloneは今回NOT_RUNです。前回のSSH agent認証拒否を変更・回避せず、既存の検証済みsourceを使いました。他OS/architecture、デモのRuby 3.4.12実行、実Issuer/Host、鍵失効、性能・本番は今回の確認に含みません。
+
 ## 固定した構成
 
 - Ruby: MRI **4.0.9** 完全一致。
 - Base: 公式 `ruby:4.0.9-trixie`、Linux arm64/v8、digest `sha256:42c18f0c9807ba1349c0253617d7f08ef98b815463b2f7785d97c4efdfd80f4d`。
 - Rails components: railties/actionpack **8.0.4**。Puma **6.6.1**、Minitest **5.27.0**。
-- Verifier: **0.2.0**。固定依存json **2.19.9**、jwt **3.3.0**、base64 **0.3.0**、openssl **4.0.2**、digest **3.2.1**を維持。
+- Verifier: **0.2.1**。固定依存json **2.19.9**、jwt **3.3.0**、base64 **0.3.0**、openssl **4.0.2**、digest **3.2.1**を維持。
 - ローカルで観測したBundlerは4.0.20、OpenSSL libraryは3.5.7。lockには複数platformの63 specs、実インストールは49 Gemsでした。
 
-これは**Linux arm64・そのprovider・Railsの組合せにおけるデモ限定の実測**です。製品Gemの支持環境や保証を変更しません。製品の正確な対応範囲は[公式SUPPORT_CONTRACT](https://github.com/cuichangquan/ap2-mandate-verifier/blob/9b2e28d91fc4886722de7b9c39a5422e966953a9/docs/SUPPORT_CONTRACT.md)を参照してください。
+これは**Linux arm64・そのprovider・Railsの組合せにおけるデモ限定の実測**です。製品Gemの支持環境や保証を変更しません。製品の正確な対応範囲は[公式SUPPORT_CONTRACT](https://github.com/cuichangquan/ap2-mandate-verifier/blob/5a02bc3a192e16aa3628cf7899617623b0aed78c/docs/SUPPORT_CONTRACT.md)を参照してください。
 
-Dockerfileは公開Gem archiveが **33,280 bytes**、SHA256が `9a52e802de5a0564c34d198f4c4ad2c2b60791a8f1eb6e31db14c49e28e91f16` であることをinstall前に照合し、チェックしたbytesをBundler cacheへ渡します。
+Dockerfileは公開Gem archiveが **34,816 bytes**、SHA256が `a4ab7e0f6c9bd87355695369374f8e6e2dad104fb673700e9f616053afe6e114` であることをinstall前に照合し、チェックしたbytesをBundler cacheへ渡します。
 
 ## APIとfixtureの出所
 
-`app/services/scenario_verifier.rb` が毎回新しいfixtureを読み、次の公開APIへ7入力を渡します。0.2.0の推奨APIを使い、旧verify APIや模擬成功結果は使いません。
+`app/services/scenario_verifier.rb` が毎回新しいfixtureを読み、次の公開APIへ7入力を渡します。推奨APIを使い、旧verify APIや模擬成功結果は使いません。
 
 ```ruby
 AP2MandateVerifier.verify_checkout(
