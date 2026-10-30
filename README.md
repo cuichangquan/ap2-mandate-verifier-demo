@@ -18,7 +18,7 @@ Ruby／Rails開発者が、購入委任の「検証成功」と「拒否の理�
 
 画面には日本語の結果・理由、Gemのstatus/code、Evidenceの有無、評価した合成時刻を表示します。エラーで検証を完了できない場合は「検証不能」とし、成功や購入許可として扱いません。
 
-以下の2画像は0.1.0実行時の記録で、0.2.0の画面確認結果ではありません。正常ケースの実画面です。スクリーンショットは実行中のlocalhost UIを撮影したもので、生成したモック画像ではありません。
+掲載する2画像は、2026-10-30にGem 0.2.0のfresh buildから起動したlocalhost UIを実ブラウザで撮影したものです。以下は正常ケースの実画面で、生成したモック画像ではありません。
 
 ![正常な合成データが実Gemの検査を通過し、Evidenceありと固定デモ時刻1800000000を表示する画面](docs/images/verified.jpg)
 
@@ -34,7 +34,7 @@ Ruby／Rails開発者が、購入委任の「検証成功」と「拒否の理�
 
 GitとDocker DesktopまたはDocker Engineを用意し、以下のclone → build → runで起動します。DB・Redis・秘密鍵の準備や、ホストOSへのRuby／Gemのインストールは不要です。
 
-この手順はLinux arm64/v8のイメージを固定して使います。以下のfresh build確認はGem 0.1.0時点の履歴です。2026-10-28に、公開Dockerfileを変更せず、アプリbuild cacheを使わないfresh buildを1回確認しました（固定base layerは再利用）。MBA／Linux arm64の一構成に限る機能観測で、他architectureでの動作は未検証です。実行条件と未証明事項は「テストと実測範囲」を参照してください。
+この手順はLinux arm64/v8のイメージを固定して使います。2026-10-30にGem 0.2.0で公開Dockerfileを変更せず、アプリの依存build cacheを使わないfresh buildを1回確認しました（固定base layerは再利用）。MBA／Linux arm64の一構成に限る機能観測で、他architectureでの動作は未検証です。cloneの端末依存の制約、実行条件と未証明事項は「テストと実測範囲」を参照してください。
 
 初回のビルドは公式Docker HubとRubyGems/CDNからイメージと依存を取得し、native extensionをビルドする場合があります。ネットワーク接続と追加ディスクが必要です。Gemfile.lockの固定条件を緩めず、取得・依存・providerの失敗時は停止してください。
 
@@ -84,7 +84,19 @@ docker run --rm --network none --cpus 1 --memory 512m --pids-limit 128 \
 
 これは当該環境での機能再現の記録です。実行条件全体の合格や、他OS/architecture・一般的な本番互換性、署名・SHA・依存の保証拡大を意味しません。
 
-**0.2.0への更新（2026-10-30）：** 推奨API、依存version、公開archiveのサイズ/SHA256を更新しました。上記0.1.0のbuild・テスト・画面観測を0.2.0の実測として流用しません。既存のdigest固定base・保存済み依存archive・公開後に照合した0.2.0 Gemを使い、network noneの使い捨てコンテナでfrozenのoffline installと既存テスト1回を確認しました。**3 tests / 82 assertions / 0 failures / 0 errors**。fixture SHA・Gemの33,280 bytes/SHA・lock不変を確認し、1 CPU／512 MiB／PIDs128、全体600秒・テスト300秒、書込tmpfs合計512 MiBに制限しました。MRI 4.0.9／Bundler 4.0.20／OpenSSL gem 4.0.2・library 3.5.7での限定観測です。初回の誤ったlock置換と、次のtmpfs noexecによる準備停止は原因を記録・是正し、テスト本体は修正後に1回だけ実行しました。公開Dockerfileからの0.2.0 fresh buildとブラウザ確認はNOT_RUNです。
+**0.2.0への更新（2026-10-30）：** 推奨API、依存version、公開archiveのサイズ/SHA256を更新しました。上記0.1.0のbuild・テスト・画面観測を0.2.0の実測として流用しません。既存のdigest固定base・保存済み依存archive・公開後に照合した0.2.0 Gemを使い、network noneの使い捨てコンテナでfrozenのoffline installと既存テスト1回を確認しました。**3 tests / 82 assertions / 0 failures / 0 errors**。fixture SHA・Gemの33,280 bytes/SHA・lock不変を確認し、1 CPU／512 MiB／PIDs128、全体600秒・テスト300秒、書込tmpfs合計512 MiBに制限しました。MRI 4.0.9／Bundler 4.0.20／OpenSSL gem 4.0.2・library 3.5.7での限定観測です。初回の誤ったlock置換と、次のtmpfs noexecによる準備停止は原因を記録・是正し、テスト本体は修正後に1回だけ実行しました。この時点ではfresh buildとブラウザ確認はNOT_RUNでした。後続の実測を次に分けて記録します。
+
+### 0.2.0 fresh build・実ブラウザ確認（2026-10-30）
+
+main [`18060d3`](https://github.com/cuichangquan/ap2-mandate-verifier-demo/tree/18060d32880a756432e704fd48f630cb715fff32) の公開Dockerfileを無改変で`--no-cache --pull=false` buildし、08:51:24–08:52:36 UTCの約72秒で成功しました。既存の固定base 7 layerを再利用し、WORKDIRはCACHED表示ですが、依存を取得・インストールするRUNは再実行されています。今回の端末ではcloneがGitのSSH転送／agent認証で失敗したため、公開main全17ファイルとGit blob一致を確認した保存sourceでbuildしました。cloneから一連の手順が完走したという記録ではありません。source取得前に誤って起動した準備buildはDockerfile未存在で即停止し、依存取得はありませんでした。
+
+新しいimageで既存テストを1回実行し、**3 tests / 82 assertions / 0 failures / 0 errors**。Gem 0.2.0の33,280 bytes/SHA256、fixture SHA256、install後のlock一致を再確認しました。環境はLinux arm64、MRI 4.0.9／Bundler 4.0.20／OpenSSL gem 4.0.2・library 3.5.7です。localhostの実ブラウザで正常 → 改ざん → 期限切れを操作し、上表のstatus/code・Evidence有無、0.2.0表示、日本語の理由を確認しました。掲載2画像はこのセッションで更新した実画面です。
+
+- buildのRUNに2 CPU／2 GiBを指定し、15分・観測ディスク増加2 GiBを停止上限としました。build前後のホスト空き容量差は約127 MiBですが、他プロセスや共有daemonも含む観測値です。
+- image内の取得archiveは44個・10,942,976 bytes。これは索引メタデータ・header・redirect等を含む通信全量ではありません。取得sourceはRubyGems、固定baseは公式Docker Hubを指定しましたが、全通信先・全量・CPU/RSSピーク・実cgroup値は未計測で、完全適合の証明ではありません。
+- テストはnetwork none、テストとpreviewは1 CPU／512 MiB／PIDs128。previewはlocalhost限定、Puma 1 thread、08:53:36–08:54:51 UTCに使用して停止しました。専用container/imageは削除済みで、共有base/cacheは保持しました。
+
+これは今回の一構成での機能観測です。他OS/architecture、実Issuer・実Host、鍵失効、性能・本番利用の確認や保証拡大は含みません。
 
 ## 固定した構成
 
