@@ -62,6 +62,15 @@ end
 
 if ENV["INPUT_BUILDER_CANDIDATE"] == "1"
   class InputBuilderCandidateTest < Minitest::Test
+    def test_candidate_returns_registered_failure_result
+      result = AP2MandateVerifier::InputBuilder.verify(unknown: true)
+      assert_equal :rejected, result.status
+      assert_equal :invalid_host_context, result.code
+      refute result.success?
+      assert_nil result.evidence
+      assert result.frozen?
+    end
+
     def test_candidate_uses_business_inputs_without_legacy_full_fixture
       original = File.method(:binread)
       File.stub(:binread, ->(path, *args) {

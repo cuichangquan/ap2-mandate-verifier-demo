@@ -1,5 +1,13 @@
 # Local 0.3.0 input-builder candidate
 
+The earlier archive SHA256 `5de6907cfcf0565ddaba1385b1d38ae113cc5e26d52259d769030237378a48a8`
+is **withdrawn** because InputBuilder.verify leaked exceptions on assembly failure.
+The corrected local archive remains version0.3.0 and37,376bytes but has SHA256
+`b3a31d5a8b0718f1085745dd4d97d85f210ff9a1628798110da9ff382ae546bd`.
+The candidate lock is pinned to this replacement. Do not use the old archive or
+its earlier observation below as evidence for the replacement. Correction PR:
+https://github.com/cuichangquan/ap2-mandate-verifier/pull/219.
+
 This branch is a local, unpublished candidate. The ordinary Dockerfile, Gemfile
 and lock continue to select published **0.2.1**. The builder path is enabled only
 by `INPUT_BUILDER_CANDIDATE=1`, set by `Dockerfile.candidate`.
@@ -46,7 +54,7 @@ preparation. Historical README test results are not evidence for this candidate.
 After publication, switch normal dependency, lock and archive identity together
 under a reviewed change. Do not merge an unavailable dependency into normal main.
 
-## 2026-10-31 candidate observation
+## Historical withdrawn candidate observation (2026-10-31)
 
 Built the candidate Dockerfile on Linux arm64 using the exact locally built
 0.3.0 Gem: **37,376 bytes**, SHA256
@@ -71,3 +79,25 @@ and300-second timeout; preview bound127.0.0.1 with one Puma thread. Docker daemo
 shared-layer work is outside RUN limits. Total network traffic and peak resource
 use were not measured; these are bounded functional observations, not performance
 or supply-chain guarantees. Normal published0.2.1 files remain unchanged.
+
+## Corrected replacement observation
+
+Product source `877f59195632f74714a60551b6afb22ac81d93e3` (correction PR219),
+37,376-byte archive SHA256
+`b3a31d5a8b0718f1085745dd4d97d85f210ff9a1628798110da9ff382ae546bd`.
+This replaces the withdrawn archive above; version remains0.3.0 because neither
+candidate was published. Candidate lock pins the replacement bytes.
+
+Rebuilt with the corrected Gem and ordinary frozen Bundler install. Tests now
+pass **5 tests /90 assertions /0 failures /0 errors**, including a real public
+InputBuilder.verify malformed-argument check returning registered failure Result,
+not an exception. Actual localhost browser repeated all3 scenarios and confirmed
+normal/scoped_research_verified/Evidence, tampered/host_binding_mismatch/no Evidence,
+and expired/invalid_purchase_time/no Evidence. These are fresh replacement results,
+not a reuse of the withdrawn candidate's PASS. Same bounded build/test/preview
+settings as above; no external Web deployment or publication.
+
+The product fix additionally retains provider/dependency unavailability separately
+from malformed inputs and checks selector shapes before dereferencing them.
+Normal published0.2.1 Gemfile/lock/Dockerfile remain unchanged. GitHub and local
+independent review evidence for the corrective candidate is recorded with PR219.
