@@ -37,6 +37,9 @@ class DemoTest < Minitest::Test
     %w[valid tampered expired valid].each do |scenario|
       page = client.get("/", "HTTP_HOST" => "localhost")
       assert_equal 200, page.status
+      assert_includes page.body, "0.3.0"
+      assert_includes page.body, "入力組み立て支援"
+      refute_includes page.body, "公開前候補"
       assert_includes page.body, "検証成功・Evidenceは購入許可ではありません。"
       assert_equal "same-origin", page.headers["referrer-policy"]
       token = page.body[/name="authenticity_token" value="([^"]+)"/, 1]
@@ -46,7 +49,9 @@ class DemoTest < Minitest::Test
         "HTTP_ORIGIN" => "http://localhost",
         params: {scenario: scenario, authenticity_token: token})
       assert_equal 200, result.status
-      assert_includes result.body, scenario == "valid" ? "scoped_research_verified" : "拒否"
+      expected_code = {"valid" => "scoped_research_verified", "tampered" => "host_binding_mismatch", "expired" => "invalid_purchase_time"}.fetch(scenario)
+      assert_includes result.body, expected_code
+      assert_includes result.body, scenario == "valid" ? "Evidence: あり（検証事実のみ）" : "Evidence: なし"
       assert_equal "no-store", result.headers["cache-control"]
       invalid = client.post("/verify", "HTTP_HOST" => "localhost", "HTTP_COOKIE" => cookie,
         params: {scenario: "https://untrusted.example/token", authenticity_token: token})
@@ -60,27 +65,25 @@ class DemoTest < Minitest::Test
   end
 end
 
-if ENV["INPUT_BUILDER_CANDIDATE"] == "1"
-  class InputBuilderCandidateTest < Minitest::Test
-    def test_candidate_returns_registered_failure_result
-      result = AP2MandateVerifier::InputBuilder.verify(unknown: true)
-      assert_equal :rejected, result.status
-      assert_equal :invalid_host_context, result.code
-      refute result.success?
-      assert_nil result.evidence
-      assert result.frozen?
-    end
+class InputBuilderTest < Minitest::Test
+  def test_returns_registered_failure_result
+    result = AP2MandateVerifier::InputBuilder.verify(unknown: true)
+    assert_equal :rejected, result.status
+    assert_equal :invalid_host_context, result.code
+    refute result.success?
+    assert_nil result.evidence
+    assert result.frozen?
+  end
 
-    def test_candidate_uses_business_inputs_without_legacy_full_fixture
-      original = File.method(:binread)
-      File.stub(:binread, ->(path, *args) {
-        raise "legacy full fixture must not be used" if File.basename(path) == "full.json"
-        original.call(path, *args)
-      }) do
-        assert_equal :scoped_research_verified, ScenarioVerifier.call("valid").code
-        assert_equal :host_binding_mismatch, ScenarioVerifier.call("tampered").code
-        assert_equal :invalid_purchase_time, ScenarioVerifier.call("expired").code
-      end
+  def test_uses_business_inputs_without_legacy_full_fixture
+    original = File.method(:binread)
+    File.stub(:binread, ->(path, *args) {
+      raise "legacy full fixture must not be used" if File.basename(path) == "full.json"
+      original.call(path, *args)
+    }) do
+      assert_equal :scoped_research_verified, ScenarioVerifier.call("valid").code
+      assert_equal :host_binding_mismatch, ScenarioVerifier.call("tampered").code
+      assert_equal :invalid_purchase_time, ScenarioVerifier.call("expired").code
     end
   end
 end

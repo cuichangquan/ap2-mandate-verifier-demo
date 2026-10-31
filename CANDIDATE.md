@@ -1,4 +1,12 @@
-# Local 0.3.0 input-builder candidate
+# Historical 0.3.0 candidate record
+
+This document preserves observations and the withdrawn archive record from before
+publication. It is **historical**, not the current startup guide. The published
+0.3.0 workflow is now the default; use [README](README.md). Candidate opt-in code,
+Dockerfile and separate lockfiles have been removed. To inspect the old setup,
+use [the pre-publication source](https://github.com/cuichangquan/ap2-mandate-verifier-demo/tree/65416f7de9d83cddc3557b4c5ed51dcd7c0cdc6e).
+
+# Pre-publication observations
 
 The earlier archive SHA256 `5de6907cfcf0565ddaba1385b1d38ae113cc5e26d52259d769030237378a48a8`
 is **withdrawn** because InputBuilder.verify leaked exceptions on assembly failure.
