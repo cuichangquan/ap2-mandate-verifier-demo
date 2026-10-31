@@ -30,7 +30,7 @@ GEM
       securerandom (>= 0.3)
       tzinfo (~> 2.0, >= 2.0.5)
       uri (>= 0.13.1)
-    ap2_mandate_verifier (0.4.0)
+    ap2_mandate_verifier (0.5.0)
       base64 (= 0.3.0)
       digest (= 3.2.1)
       json (= 2.19.9)
@@ -152,7 +152,7 @@ PLATFORMS
 
 DEPENDENCIES
   actionpack (= 8.0.4)
-  ap2_mandate_verifier (= 0.4.0)
+  ap2_mandate_verifier (= 0.5.0)
   minitest (= 5.27.0)
   puma (= 6.6.1)
   railties (= 8.0.4)
@@ -161,7 +161,7 @@ CHECKSUMS
   actionpack (8.0.4) sha256=0364c7582f32c8f404725fa30d3f6853f834c5f4964afd4a072b848c8a23cddb
   actionview (8.0.4) sha256=5bd3c41ee7a59e14cf062bb5e4ee53c9a253d12fc13c8754cae368012e1a1648
   activesupport (8.0.4) sha256=894a3a6c7733b5fae5a7df3acd76c4b563f38687df8a04fa3cbd25360f3fe95a
-  ap2_mandate_verifier (0.4.0) sha256=b212db01e7deb18dcef1199414f9d93ef43cb1f74b62baa55306de3955dfe177
+  ap2_mandate_verifier (0.5.0) sha256=00b0ce0981070864c67a056906c5af204bbc5aaa80d029cb4a64294634367dd8
   base64 (0.3.0) sha256=27337aeabad6ffae05c265c450490628ef3ebd4b67be58257393227588f5a97b
   benchmark (0.5.0) sha256=465df122341aedcb81a2a24b4d3bd19b6c67c1530713fd533f3ff034e419236c
   bigdecimal (4.1.3) sha256=61ebe1e5e559bdc3cc6f2c0ee7f427321fc838f59611c294356eb04d6e21cf66

@@ -1,6 +1,6 @@
 # frozen_string_literal: true
-# Only loaded when the unpublished candidate is explicitly opted into.
-module MerchantCandidate
+# Published 0.5.0; synthetic keys and application outcomes only.
+module MerchantScenario
   def self.call
     require "ap2_mandate_verifier"
     require "openssl"

@@ -1,9 +1,9 @@
 # frozen_string_literal: true
 require "minitest/autorun"
-require_relative "../app/services/merchant_candidate"
-class MerchantCandidateTest < Minitest::Test
+require_relative "../app/services/merchant_scenario"
+class MerchantScenarioTest < Minitest::Test
   def test_signing_receipt_business_separation_and_wrong_signer
-    result = MerchantCandidate.call
+    result = MerchantScenario.call
     assert_equal 43, result[:checkout_hash].length
     assert_equal 43, result[:reference].length
     refute_equal result[:checkout_hash], result[:reference]

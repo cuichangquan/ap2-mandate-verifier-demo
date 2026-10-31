@@ -1,6 +1,15 @@
+## 0.4.0 / 0.5.0 candidate history (preserved)
+
+Published 0.4.0 observations and the explicit Merchant candidate route are retained at
+[main 4ae2790](https://github.com/cuichangquan/ap2-mandate-verifier-demo/tree/4ae2790ea5cb1b1cc4a2315eaa0e723579c4b55e).
+That README records 6/158 original 0.4.0 observations and later 7/161 stable,
+7/168 + 1/13 candidate checks. The old separate Gemfile and environment route
+are historical, not required by the published 0.5.0 normal path. Prior PASS is
+not counted as the current fresh-build result.
+
 # 過去のデモ観測履歴
 
-ここは0.1.0／0.2.0／0.2.1の過去の観測です。現在の0.4.0起動・検証手順は[README](../README.md)を参照してください。過去のPASSを公開0.4.0の実測として扱いません。
+ここは0.1.0／0.2.0／0.2.1の過去の観測です。当時の0.4.0起動・検証手順は[README](../README.md)を参照してください。過去のPASSを公開0.4.0の実測として扱いません。
 
 ## 公開0.3.0と未公開0.4.0候補の観測
 
