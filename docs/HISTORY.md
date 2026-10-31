@@ -1,6 +1,18 @@
-# 0.2.1までのデモ観測履歴
+# 過去のデモ観測履歴
 
-ここは0.1.0／0.2.0／0.2.1の過去の観測です。現在の0.3.0起動・検証手順は[README](../README.md)を参照してください。過去のPASSを公開0.3.0の実測として扱いません。
+ここは0.1.0／0.2.0／0.2.1の過去の観測です。現在の0.4.0起動・検証手順は[README](../README.md)を参照してください。過去のPASSを公開0.4.0の実測として扱いません。
+
+## 公開0.3.0と未公開0.4.0候補の観測
+
+0.3.0通常経路は2026-10-31 01:37:11–01:38:23 UTCのfresh build（固定base再利用）で約72秒、公開37,376bytes／SHA256 b3a31d5a8b0718f1085745dd4d97d85f210ff9a1628798110da9ff382ae546bdを照合し、5tests／122assertions、実ブラウザ3ケースを観測しました。[当時のREADME](https://github.com/cuichangquan/ap2-mandate-verifier-demo/blob/e103afa9b837036917fde64267cae98d8d8aad2d/README.md)。
+
+![公開0.3.0の過去の正常画面](images/verified030.jpg)
+
+その後の診断候補PR10では、通常0.3.0が6tests／122assertions／候補専用1skip、明示的な未公開0.4.0候補が6tests／148assertionsで成功。候補用Dockerfile・Gemfile・lockと環境変数は[固定commit](https://github.com/cuichangquan/ap2-mandate-verifier-demo/tree/047ca8f31ea4a9b31ea6d08f274ac453756ff1d5)に保持されています。同サイズ改変archiveの事前hash拒否も候補時点の観測です。
+
+現在の公開0.4.0の通常導入・fresh build・診断表示は別途実測し、[README](../README.md)へ記録しています。以前の候補PASSを今回の実測として数えません。
+
+## 0.2.1以前
 
 以下の画像は2026-10-30にGem0.2.1のfresh buildから起動した実localhost画面です。
 
