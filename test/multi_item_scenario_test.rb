@@ -29,11 +29,13 @@ class MultiItemScenarioTest < Minitest::Test
     assert_empty result[:rows]
   end
 
-  def test_candidate_page_uses_real_verifier_and_no_store
+  def test_published_page_uses_real_verifier_and_no_store
     response = Rack::MockRequest.new(PurchaseDemo::Application).get("/multi-item", "HTTP_HOST" => "localhost")
     assert_equal 200, response.status
     assert_equal "no-store", response.headers["cache-control"]
     %w[multi-item-scenario scoped_research_verified constraint_mismatch Success Error].each { |text| assert_includes response.body, text }
     assert_includes response.body, "購入成功通知 false"
+    assert_includes response.body, "公開済みGem"
+    refute_includes response.body, "公開前候補"
   end
 end

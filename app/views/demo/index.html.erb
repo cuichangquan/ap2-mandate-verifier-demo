@@ -5,8 +5,8 @@
 <body><main><small>AP2 MANDATE VERIFIER · <%= Gem.loaded_specs.fetch("ap2_mandate_verifier").version %> · LOCAL DEMO</small>
 <h1>購入委任を、検証してみる。</h1>
 <p><a href="/merchant">販売者署名と成功・拒否Receiptを試す</a></p>
-<% if MultiItemScenario.available? %><p><a href="/multi-item">複数商品・数量の候補デモを試す</a></p><% end %>
-<% if @multi_item_scenarios %><section id="multi-item-scenario"><h2>複数商品・数量（公開前候補、合成データ）</h2>
+<% if MultiItemScenario.available? %><p><a href="/multi-item">複数商品・数量を試す</a></p><% end %>
+<% if @multi_item_scenarios %><section id="multi-item-scenario"><h2>複数商品・数量（公開済みGem、合成データ）</h2>
 <p>明示profile: <code><%= MultiItemScenario::PROFILE %> v1</code>。Coffeeを2個、Teaを3個の許可条件で照合します。要件IDと明細IDは別です。</p>
 <% @multi_item_scenarios.each_with_index do |scenario, index| %>
 <h3><%= index.zero? ? "正常な複数明細" : "2件目の数量不足" %></h3>

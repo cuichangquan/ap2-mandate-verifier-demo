@@ -1,5 +1,9 @@
 # 0.6.0複数明細候補のローカル検証
 
+**以下は公開前の歴史記録です。** 公開済み0.6.0の通常起動は
+[README](../README.md)、公開Gemを使う新たな実測は[PUBLISHED_060](PUBLISHED_060.md)を参照してください。
+公開前snapshotのhash・失敗履歴は削除せず保持します。
+
 2026-10-31 UTC。公開済み0.5.0の通常経路は保持し、新機能は
 `Dockerfile.candidate` / `Gemfile.candidate` と `/multi-item` で明示選択する。
 未公開候補の実装確認であり、公開・本番GO・実Issuer適合の証明ではない。

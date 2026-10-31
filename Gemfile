@@ -3,5 +3,5 @@ ruby "4.0.9"
 gem "railties", "= 8.0.4"
 gem "actionpack", "= 8.0.4"
 gem "puma", "= 6.6.1"
-gem "ap2_mandate_verifier", "= 0.5.0"
+gem "ap2_mandate_verifier", "= 0.6.0"
 gem "minitest", "= 5.27.0", group: :test

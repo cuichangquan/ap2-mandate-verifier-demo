@@ -2,8 +2,9 @@
 
 This document preserves observations and the withdrawn archive record from before
 publication. It is **historical**, not the current startup guide. The published
-0.4.0 workflow is now the default; use [README](README.md). Candidate opt-in code,
-Dockerfile and separate lockfiles have been removed. To inspect the old setup,
+0.6.0 workflow is now the default; use [README](README.md). The 0.3.0 opt-in code,
+Dockerfile and separate lockfiles were removed. A later development-source comparison
+route is documented separately; it is not this historical setup. To inspect the old setup,
 use [the pre-publication source](https://github.com/cuichangquan/ap2-mandate-verifier-demo/tree/65416f7de9d83cddc3557b4c5ed51dcd7c0cdc6e).
 
 # Pre-publication observations
