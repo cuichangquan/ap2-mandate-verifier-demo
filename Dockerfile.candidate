@@ -1,0 +1,18 @@
+# Local-only unreleased candidate; ordinary Dockerfile still uses published 0.2.1.
+FROM ruby:4.0.9-trixie@sha256:42c18f0c9807ba1349c0253617d7f08ef98b815463b2f7785d97c4efdfd80f4d
+WORKDIR /demo
+COPY Gemfile.candidate ./Gemfile
+COPY Gemfile.candidate.lock ./Gemfile.lock
+COPY candidate/ap2_mandate_verifier-0.3.0.gem /tmp/candidate.gem
+ARG CANDIDATE_SHA256
+RUN test -n "$CANDIDATE_SHA256" && \
+    echo "$CANDIDATE_SHA256  /tmp/candidate.gem" | sha256sum -c - && \
+    mkdir -p vendor/cache && \
+    mv /tmp/candidate.gem vendor/cache/ap2_mandate_verifier-0.3.0.gem && \
+    BUNDLE_FROZEN=true bundle install
+COPY . .
+# COPY includes stable Gemfile too: restore candidate identities explicitly.
+RUN cp Gemfile.candidate Gemfile && cp Gemfile.candidate.lock Gemfile.lock
+ENV RAILS_ENV=development INPUT_BUILDER_CANDIDATE=1
+EXPOSE 3000
+CMD ["bundle", "exec", "puma", "-b", "tcp://0.0.0.0:3000", "-t", "1:1", "config.ru"]
