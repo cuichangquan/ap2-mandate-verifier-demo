@@ -1,5 +1,5 @@
 # frozen_string_literal: true
-# Published 0.5.0; synthetic keys and application outcomes only.
+# Published 0.6.0; synthetic keys and application outcomes only.
 module MerchantScenario
   def self.call
     require "ap2_mandate_verifier"

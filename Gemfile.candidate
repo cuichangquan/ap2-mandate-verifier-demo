@@ -1,4 +1,4 @@
-# Used only by Dockerfile.candidate after ordinary installation of a local Gem.
+# Development-source comparison only; normal startup uses published Gemfile.
 source "https://rubygems.org"
 ruby "4.0.9"
 gem "railties", "= 8.0.4"

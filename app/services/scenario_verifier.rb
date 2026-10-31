@@ -2,7 +2,7 @@ require "ap2_mandate_verifier"
 require "json"
 require "base64"
 
-# Published 0.5.0 workflow: independent synthetic business data, never token trust.
+# Published 0.6.0 workflow: independent synthetic business data, never token trust.
 class ScenarioVerifier
   LABELS = {"valid" => "正常な購入内容", "tampered" => "購入内容を改ざん", "expired" => "有効期限切れ", "missing_currency" => "注文の通貨を渡し忘れる"}.freeze
   Outcome = Data.define(:title, :reason, :status, :code, :evidence_present, :time, :diagnostic)
