@@ -4,8 +4,9 @@ require "base64"
 
 # Published 0.3.0 workflow: independent synthetic business data, never token trust.
 class ScenarioVerifier
-  LABELS = {"valid" => "正常な購入内容", "tampered" => "購入内容を改ざん", "expired" => "有効期限切れ"}.freeze
-  Outcome = Data.define(:title, :reason, :status, :code, :evidence_present, :time)
+  CANDIDATE = ENV["DIAGNOSTICS_CANDIDATE"] == "1"
+  LABELS = {"valid" => "正常な購入内容", "tampered" => "購入内容を改ざん", "expired" => "有効期限切れ"}.merge(CANDIDATE ? {"missing_currency" => "注文の通貨を渡し忘れる"} : {}).freeze
+  Outcome = Data.define(:title, :reason, :status, :code, :evidence_present, :time, :diagnostic)
   DIRECTORY = File.expand_path("../../fixtures/input_builder", __dir__)
 
   def self.read(name)
@@ -36,6 +37,7 @@ class ScenarioVerifier
     restored = builder.restore(saved_challenge: saved)
     now = scenario == "expired" ? 1_800_000_101 : 1_800_000_000
     current_order = read("order")
+    current_order.delete("currency") if scenario == "missing_currency"
     if scenario == "tampered"
       header, payload, signature = wires.fetch("host_checkout_jws").split(".")
       checkout = JSON.parse(Base64.urlsafe_decode64(payload))
@@ -55,10 +57,11 @@ class ScenarioVerifier
     else
       result.rejected? ? "固定profileの検査条件を満たしません。" : "検証を完了できません。購入処理は行いません。"
     end
+    diagnostic = result.respond_to?(:diagnostic) ? result.diagnostic&.to_h(locale: :ja) : nil
     Outcome.new(title:, reason:, status: result.status, code: result.code,
-      evidence_present: !result.evidence.nil?, time: now)
+      evidence_present: !result.evidence.nil?, time: now, diagnostic: diagnostic)
   rescue StandardError, LoadError
     Outcome.new(title: "検証不能", reason: "検証を完了できません。購入処理は行いません。",
-      status: :unavailable, code: :demo_verification_unavailable, evidence_present: false, time: nil)
+      status: :unavailable, code: :demo_verification_unavailable, evidence_present: false, time: nil, diagnostic: nil)
   end
 end

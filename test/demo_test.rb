@@ -23,6 +23,21 @@ class DemoTest < Minitest::Test
     end
   end
 
+  def test_candidate_diagnostics
+    skip "unpublished candidate opt-in only" unless ScenarioVerifier::CANDIDATE
+    missing = ScenarioVerifier.call("missing_currency")
+    assert_equal :rejected, missing.status
+    assert_equal :invalid_host_context, missing.code
+    refute missing.evidence_present
+    assert_equal "order.currency", missing.diagnostic[:field]
+    assert_equal :missing_required_field, missing.diagnostic[:reason]
+    assert_equal :input_assembly, missing.diagnostic[:stage]
+    assert_includes missing.diagnostic[:hint], "必須項目"
+    assert_nil ScenarioVerifier.call("valid").diagnostic
+    assert_equal :host_binding, ScenarioVerifier.call("tampered").diagnostic[:stage]
+    assert_equal :invalid_purchase_time, ScenarioVerifier.call("expired").diagnostic[:reason]
+  end
+
   def test_errors_do_not_expose_exception_or_evidence
     File.stub(:binread, ->(*) { raise "sensitive fixture detail" }) do
       result = ScenarioVerifier.call("valid")
@@ -34,12 +49,12 @@ class DemoTest < Minitest::Test
 
   def test_page_and_real_post_with_csrf
     client = Rack::MockRequest.new(PurchaseDemo::Application)
-    %w[valid tampered expired valid].each do |scenario|
+    (ScenarioVerifier::CANDIDATE ? %w[valid tampered expired missing_currency valid] : %w[valid tampered expired valid]).each do |scenario|
       page = client.get("/", "HTTP_HOST" => "localhost")
       assert_equal 200, page.status
-      assert_includes page.body, "0.3.0"
+      assert_includes page.body, ScenarioVerifier::CANDIDATE ? "0.4.0" : "0.3.0"
       assert_includes page.body, "入力組み立て支援"
-      refute_includes page.body, "公開前候補"
+      refute_includes page.body, "公開前候補" unless ScenarioVerifier::CANDIDATE
       assert_includes page.body, "検証成功・Evidenceは購入許可ではありません。"
       assert_equal "same-origin", page.headers["referrer-policy"]
       token = page.body[/name="authenticity_token" value="([^"]+)"/, 1]
@@ -49,8 +64,13 @@ class DemoTest < Minitest::Test
         "HTTP_ORIGIN" => "http://localhost",
         params: {scenario: scenario, authenticity_token: token})
       assert_equal 200, result.status
-      expected_code = {"valid" => "scoped_research_verified", "tampered" => "host_binding_mismatch", "expired" => "invalid_purchase_time"}.fetch(scenario)
+      expected_code = {"valid" => "scoped_research_verified", "tampered" => "host_binding_mismatch", "expired" => "invalid_purchase_time", "missing_currency" => "invalid_host_context"}.fetch(scenario)
       assert_includes result.body, expected_code
+      if scenario == "missing_currency"
+        assert_includes result.body, "order.currency"
+        assert_includes result.body, "missing_required_field"
+        assert_includes result.body, "次の確認候補"
+      end
       assert_includes result.body, scenario == "valid" ? "Evidence: あり（検証事実のみ）" : "Evidence: なし"
       assert_equal "no-store", result.headers["cache-control"]
       invalid = client.post("/verify", "HTTP_HOST" => "localhost", "HTTP_COOKIE" => cookie,
