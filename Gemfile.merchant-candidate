@@ -1,8 +1,0 @@
-# Explicit unpublished candidate opt-in. Normal Gemfile stays on published 0.4.0.
-source "https://rubygems.org"
-ruby "4.0.9"
-gem "railties", "= 8.0.4"
-gem "actionpack", "= 8.0.4"
-gem "puma", "= 6.6.1"
-gem "ap2_mandate_verifier", path: ENV.fetch("AP2_MERCHANT_CANDIDATE_PATH")
-gem "minitest", "= 5.27.0", group: :test

@@ -5,9 +5,8 @@ class DemoController < ActionController::Base
   end
 
   def merchant
-    return head :not_found unless ENV["AP2_MERCHANT_CANDIDATE"] == "1"
-    require_relative "../services/merchant_candidate"
-    @merchant_candidate = MerchantCandidate.call
+    require_relative "../services/merchant_scenario"
+    @merchant_scenario = MerchantScenario.call
     response.headers["Cache-Control"] = "no-store"
     render :index
   end
