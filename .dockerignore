@@ -10,3 +10,5 @@ vendor
 *.gem
 *.pem
 *.key
+
+candidate

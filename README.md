@@ -1,5 +1,7 @@
 # AP2 Mandate Verifier Demo
 
+未公開0.4.0の診断確認は、[明示的な候補経路](DIAGNOSTICS_CANDIDATE.md)を使用します。通常起動は公開済み0.3.0を維持します。
+
 Ruby／Rails開発者向けのローカル専用Railsアプリです。公開済み [ap2_mandate_verifier 0.3.0](https://rubygems.org/gems/ap2_mandate_verifier/versions/0.3.0) の**入力組み立て支援**を通常起動で使い、正常・改ざん・期限切れを実Gemで比較できます。
 
 業務情報 → Challenge発行前準備 → 保存・復元 → 独立した現在状態 → 完全検証を示します。利用者がGem独自のtrust／selection／Host JSONやハッシュを手書きする必要はありません。合成の注文・登録公開鍵・署名原文を使い、署名claimから信頼や期待金額を自己承認しません。
