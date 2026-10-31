@@ -5,6 +5,21 @@ require_relative "../config/application"
 require "rack/mock"
 
 class DemoTest < Minitest::Test
+  def test_candidate_route_requires_opt_in
+    client = Rack::MockRequest.new(PurchaseDemo::Application)
+    response = client.get("/merchant-candidate", "HTTP_HOST" => "localhost")
+    if ENV["AP2_MERCHANT_CANDIDATE"] == "1"
+      assert_equal 200, response.status
+      assert_includes response.body, 'id="merchant-candidate"'
+      assert_includes response.body, "Success"
+      assert_includes response.body, "Error"
+      assert_includes response.body, "購入成功通知 false"
+      assert_equal "no-store", response.headers["cache-control"]
+    else
+      assert_equal 404, response.status
+      refute_includes client.get("/", "HTTP_HOST" => "localhost").body, "/merchant-candidate"
+    end
+  end
   def test_real_verifier_all_scenarios_and_repetition
     3.times do
       valid = ScenarioVerifier.call("valid")
@@ -51,7 +66,7 @@ class DemoTest < Minitest::Test
     %w[valid tampered expired missing_currency valid].each do |scenario|
       page = client.get("/", "HTTP_HOST" => "localhost")
       assert_equal 200, page.status
-      assert_includes page.body, "0.4.0"
+      assert_includes page.body, ENV["AP2_MERCHANT_CANDIDATE"] == "1" ? "0.5.0" : "0.4.0"
       assert_includes page.body, "入力組み立て支援"
       refute_includes page.body, "公開前候補"
       assert_includes page.body, "検証成功・Evidenceは購入許可ではありません。"

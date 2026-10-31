@@ -17,6 +17,7 @@ module PurchaseDemo
       "Referrer-Policy" => "same-origin")
     routes.append do
       root "demo#index"
+      get "/merchant-candidate", to: "demo#merchant" if ENV["AP2_MERCHANT_CANDIDATE"] == "1"
       post "/verify", to: "demo#verify"
     end
   end

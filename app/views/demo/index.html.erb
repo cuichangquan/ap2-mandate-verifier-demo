@@ -4,6 +4,15 @@
 <style>body{font-family:system-ui,sans-serif;background:#f5f4ef;color:#18332e;margin:0;padding:40px 20px}main{max-width:760px;margin:auto}h1{font-size:2rem}section{background:white;border:1px solid #d6ddd6;border-radius:18px;padding:24px;margin:24px 0}.warning{background:#fff1c7;border-left:6px solid #9b6200;padding:18px}button{background:#175d50;color:white;border:0;border-radius:8px;padding:13px 22px;font-size:1rem;cursor:pointer}label{display:block;margin:18px 0}small{color:#465b55}code{overflow-wrap:anywhere}h2{margin-top:0}</style></head>
 <body><main><small>AP2 MANDATE VERIFIER · <%= Gem.loaded_specs.fetch("ap2_mandate_verifier").version %> · LOCAL DEMO</small>
 <h1>購入委任を、検証してみる。</h1>
+<% if ENV["AP2_MERCHANT_CANDIDATE"] == "1" %>
+<p><a href="/merchant-candidate">未公開候補：販売者署名と成功・拒否Receiptを試す</a></p>
+<% end %>
+<% if @merchant_candidate %><section id="merchant-candidate"><h2>販売者署名とCheckout Receipt（合成データ）</h2>
+<p>Checkout hash: <code><%= @merchant_candidate[:checkout_hash] %></code><br>
+Mandate reference: <code><%= @merchant_candidate[:reference] %></code></p>
+<% @merchant_candidate[:rows].each do |row| %>
+<p><strong><%= row[:outcome] %></strong>：真正性 <%= row[:verified] %> ／ 購入成功通知 <%= row[:purchase_succeeded] %> ／ 拒否通知 <%= row[:purchase_rejected] %> ／ 別署名者を期待した検証 <%= row[:wrong_issuer_verified] %></p>
+<% end %><p>処理結果は利用アプリが明示します。Receiptの真正性検証は購入処理やMandate認可を実行しません。</p></section><% end %>
 <p>入力組み立て支援：業務情報 → 発行前準備 → 保存・復元 → 現在状態 → 完全検証。独自JSONやハッシュはGemが組み立てます。</p>
 
 <p>同じ合成データを使い、正常・改ざん・期限切れ・通貨の渡し忘れの結果と診断を比較できます。</p>

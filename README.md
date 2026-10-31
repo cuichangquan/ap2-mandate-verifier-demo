@@ -64,8 +64,35 @@ Dockerfileは公式Gemの44,032bytesとSHA256 `b212db01e7deb18dcef1199414f9d93ef
 
 ## APIと業務情報の出所
 
-`app/services/scenario_verifier.rb` が `fixtures/input_builder/` の独立した業務情報と署名原文を読み、`trust` → `prepare` → 保存String → `restore` → 現在状態の再取得 → `verify` を行います。候補用環境変数・別Gemfile・別Dockerfileは不要となり削除しました。[候補経路の履歴](DIAGNOSTICS_CANDIDATE.md)は固定commitへの案内として保持します。
+`app/services/scenario_verifier.rb` が `fixtures/input_builder/` の独立した業務情報と署名原文を読み、`trust` → `prepare` → 保存String → `restore` → 現在状態の再取得 → `verify` を行います。診断機能0.4.0の通常経路では、当時の候補用環境変数・別Gemfile・別Dockerfileは不要となり削除しました。今回のMerchant署名候補経路は下記の明示opt-inです。[候補経路の履歴](DIAGNOSTICS_CANDIDATE.md)は固定commitへの案内として保持します。
 
 保存済みB・hash・trust参照を現在値から修復せず、署名原文の順序・末尾を保持します。組み立てだけでEvidenceは返らず、完全検証に接続します。既存7入力API・固定profile・Result/Evidence契約は維持します。業務対応付けは[英語](https://github.com/cuichangquan/ap2-mandate-verifier/blob/main/docs/INPUT_BUILDER.md)／[日本語](https://github.com/cuichangquan/ap2-mandate-verifier/blob/main/docs/INPUT_BUILDER.ja.md)。
 
 [MIT License](LICENSE)、[出所・通知](THIRD_PARTY_NOTICES.md)、[業務fixture通知](fixtures/input_builder/NOTICE.md)を保持しています。[過去のZenn記事](https://zenn.dev/ccq/articles/7f9643f96fe5c7)は0.2.1時点の履歴です。実行ログ・依存archive・一時セッション署名値はコミットしません。Web公開・実決済は行いません。
+
+## 未公開Merchant署名・Receipt候補の明示opt-in
+
+通常のGemfile/Dockerfileは公開済み0.4.0のままです。新機能は候補sourceを別に取得し、
+候補用Gemfileと環境変数を明示したときだけ試せます。MacへのRuby導入は不要です。
+まず既存の通常Docker手順で `ap2-demo:stable` imageをビルドしてください。
+
+```sh
+# CANDIDATEにはレビュー対象の本体候補checkoutの絶対pathを指定します。
+CANDIDATE=/absolute/path/to/ap2-mandate-verifier
+# Gemfileとlockの参照先は候補用のみ。公開Gemの依存固定は変更しません。
+docker run --rm --cpus=2 --memory=768m --pids-limit=128 \
+  -p 127.0.0.1:3000:3000 \
+  -e BUNDLE_GEMFILE=/demo/Gemfile.merchant-candidate -e BUNDLE_FROZEN=false \
+  -e AP2_MERCHANT_CANDIDATE_PATH=/candidate -e AP2_MERCHANT_CANDIDATE=1 \
+  -v "$PWD:/demo" -v "$CANDIDATE:/candidate:ro" -w /demo ap2-demo:stable \
+  sh -c 'bundle lock --local && bundle exec puma -b tcp://0.0.0.0:3000 -t 1:1 config.ru'
+```
+
+`http://127.0.0.1:3000/merchant-candidate` で、Checkoutの原文hash、Mandateのreference、
+真正なSuccess/Errorと別署名者期待時の拒否を比較できます。毎回プロセス内で合成鍵を作り、
+鍵を保存・表示しません。テスト用Mandate envelopeは実際の利用者認可を示しません。
+Receiptの真正性検証は購入や決済を実行せず、業務結果をアプリが明示します。
+
+候補試験は同じ環境変数で `bundle exec ruby test/demo_test.rb` と
+`bundle exec ruby test/merchant_candidate_test.rb`。opt-inしない場合に候補routeは存在しません。
+[API・対応形状と仕様/SDK差異](https://github.com/cuichangquan/ap2-mandate-verifier/blob/main/docs/MERCHANT_SIGNING.md)。
