@@ -1,9 +1,0 @@
-# Build the unchanged published-demo Dockerfile as ap2-diagnostics-demo:stable first.
-FROM ap2-diagnostics-demo:stable
-COPY candidate/ap2_mandate_verifier-0.4.0.gem /tmp/candidate.gem
-COPY Gemfile.candidate Gemfile.candidate.lock ./
-ENV BUNDLE_GEMFILE=/demo/Gemfile.candidate DIAGNOSTICS_CANDIDATE=1
-RUN test "$(wc -c < /tmp/candidate.gem)" -eq 44032 && \
-    echo 'b212db01e7deb18dcef1199414f9d93ef43cb1f74b62baa55306de3955dfe177  /tmp/candidate.gem' | sha256sum -c - && \
-    gem install --local --no-document /tmp/candidate.gem && \
-    BUNDLE_FROZEN=true bundle install --local && rm /tmp/candidate.gem

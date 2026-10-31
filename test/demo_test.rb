@@ -23,8 +23,7 @@ class DemoTest < Minitest::Test
     end
   end
 
-  def test_candidate_diagnostics
-    skip "unpublished candidate opt-in only" unless ScenarioVerifier::CANDIDATE
+  def test_published_diagnostics
     missing = ScenarioVerifier.call("missing_currency")
     assert_equal :rejected, missing.status
     assert_equal :invalid_host_context, missing.code
@@ -49,12 +48,12 @@ class DemoTest < Minitest::Test
 
   def test_page_and_real_post_with_csrf
     client = Rack::MockRequest.new(PurchaseDemo::Application)
-    (ScenarioVerifier::CANDIDATE ? %w[valid tampered expired missing_currency valid] : %w[valid tampered expired valid]).each do |scenario|
+    %w[valid tampered expired missing_currency valid].each do |scenario|
       page = client.get("/", "HTTP_HOST" => "localhost")
       assert_equal 200, page.status
-      assert_includes page.body, ScenarioVerifier::CANDIDATE ? "0.4.0" : "0.3.0"
+      assert_includes page.body, "0.4.0"
       assert_includes page.body, "入力組み立て支援"
-      refute_includes page.body, "公開前候補" unless ScenarioVerifier::CANDIDATE
+      refute_includes page.body, "公開前候補"
       assert_includes page.body, "検証成功・Evidenceは購入許可ではありません。"
       assert_equal "same-origin", page.headers["referrer-policy"]
       token = page.body[/name="authenticity_token" value="([^"]+)"/, 1]
