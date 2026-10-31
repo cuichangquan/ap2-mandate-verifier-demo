@@ -12,6 +12,8 @@ class ScenarioVerifier
 
   def self.call(scenario)
     raise ArgumentError, "unknown scenario" unless LABELS.key?(scenario)
+    return InputBuilderScenarioVerifier.call(scenario) if ENV["INPUT_BUILDER_CANDIDATE"] == "1"
+
     raw = File.binread(FIXTURE)
     raise "fixture mismatch" unless Digest::SHA256.hexdigest(raw) == SHA256
     full = JSON.parse(raw) # Fresh detached input on every request.

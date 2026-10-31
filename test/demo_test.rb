@@ -59,3 +59,19 @@ class DemoTest < Minitest::Test
     assert_equal 403, client.get("/", "HTTP_HOST" => "untrusted.example").status
   end
 end
+
+if ENV["INPUT_BUILDER_CANDIDATE"] == "1"
+  class InputBuilderCandidateTest < Minitest::Test
+    def test_candidate_uses_business_inputs_without_legacy_full_fixture
+      original = File.method(:binread)
+      File.stub(:binread, ->(path, *args) {
+        raise "legacy full fixture must not be used" if File.basename(path) == "full.json"
+        original.call(path, *args)
+      }) do
+        assert_equal :scoped_research_verified, ScenarioVerifier.call("valid").code
+        assert_equal :host_binding_mismatch, ScenarioVerifier.call("tampered").code
+        assert_equal :invalid_purchase_time, ScenarioVerifier.call("expired").code
+      end
+    end
+  end
+end
