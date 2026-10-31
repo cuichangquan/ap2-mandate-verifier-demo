@@ -3,7 +3,6 @@ require "rails"
 require "action_controller/railtie"
 require "securerandom"
 require_relative "../app/services/scenario_verifier"
-require_relative "../app/services/input_builder_scenario_verifier" if ENV["INPUT_BUILDER_CANDIDATE"] == "1"
 
 module PurchaseDemo
   class Application < Rails::Application

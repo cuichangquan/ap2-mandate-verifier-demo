@@ -1,35 +1,54 @@
 require "ap2_mandate_verifier"
 require "json"
-require "digest"
 require "base64"
 
+# Published 0.3.0 workflow: independent synthetic business data, never token trust.
 class ScenarioVerifier
   LABELS = {"valid" => "正常な購入内容", "tampered" => "購入内容を改ざん", "expired" => "有効期限切れ"}.freeze
-  FIXTURE = File.expand_path("../../fixtures/full.json", __dir__)
-  SHA256 = "ac98f3b0c475365e2e7416cbb1838f1692a0ff2693c71dba0cb664c52b9ad42f"
-  KEYS = %w[trust_json selection_json host_json root_presentation terminal_jws host_checkout_jws verified_at].freeze
   Outcome = Data.define(:title, :reason, :status, :code, :evidence_present, :time)
+  DIRECTORY = File.expand_path("../../fixtures/input_builder", __dir__)
+
+  def self.read(name)
+    JSON.parse(File.binread(File.join(DIRECTORY, "#{name}.json")))
+  end
+
+  def self.trust(now)
+    AP2MandateVerifier::InputBuilder.trust(snapshot: read("trust_snapshot"),
+      tenant_id: "synthetic-tenant",
+      issuer: {"identity" => "issuer", "purpose" => "checkout", "key_ref" => "issuer-1"},
+      agent: {"identity" => "agent", "purpose" => "checkout", "key_ref" => "agent-1"},
+      merchant: {"identity" => "shop", "purpose" => "checkout", "key_ref" => "merchant-1"},
+      verified_at: now)
+  end
 
   def self.call(scenario)
     raise ArgumentError, "unknown scenario" unless LABELS.key?(scenario)
-    return InputBuilderScenarioVerifier.call(scenario) if ENV["INPUT_BUILDER_CANDIDATE"] == "1"
-
-    raw = File.binread(FIXTURE)
-    raise "fixture mismatch" unless Digest::SHA256.hexdigest(raw) == SHA256
-    full = JSON.parse(raw) # Fresh detached input on every request.
+    builder = AP2MandateVerifier::InputBuilder
+    wires = read("signed_wires")
+    issued = builder.prepare(trust: trust(1_800_000_000), order: read("order"),
+      root_presentation: wires.fetch("root_presentation"),
+      host_checkout_jws: wires.fetch("host_checkout_jws"),
+      challenge_id: "synthetic-challenge", nonce: "n", issuer_id: "synthetic-host",
+      not_before: 1_799_998_000, not_after: 1_800_002_000)
+    # JSON bytes model a persisted, authenticated Host record. Never rebuild B
+    # from current state during restore. A production Host owns actual storage.
+    saved = issued.dup
+    restored = builder.restore(saved_challenge: saved)
+    now = scenario == "expired" ? 1_800_000_101 : 1_800_000_000
+    current_order = read("order")
     if scenario == "tampered"
-      header, payload, signature = full.fetch("host_checkout_jws").split(".")
+      header, payload, signature = wires.fetch("host_checkout_jws").split(".")
       checkout = JSON.parse(Base64.urlsafe_decode64(payload))
       checkout.fetch("line_items").first.fetch("item")["price"] = 999
-      full["host_checkout_jws"] = [header, Base64.urlsafe_encode64(JSON.generate(checkout), padding: false), signature].join(".")
-    elsif scenario == "expired"
-      full["verified_at"] = 1_800_000_101 # Signed mandate exp=1800000100; trusted challenge remains in range.
+      wires["host_checkout_jws"] = [header, Base64.urlsafe_encode64(JSON.generate(checkout), padding: false), signature].join(".")
     end
-    inputs = KEYS.to_h { |key| [key.to_sym, full.fetch(key)] }
-    result = AP2MandateVerifier.verify_checkout(**inputs)
+    result = builder.verify(trust: trust(now), saved_challenge: restored,
+      order: current_order, **wires.transform_keys(&:to_sym),
+      expected_challenge_issuer_id: "synthetic-host",
+      clock_source_id: "fixed-synthetic-clock", verified_at: now)
     title = result.success? ? "検証成功" : (result.rejected? ? "拒否" : "検証不能")
     reason = case result.code
-    when :scoped_research_verified then "合成データが固定profileの検査を通過しました。"
+    when :scoped_research_verified then "業務情報から組み立てた入力が固定profileの検査を通過しました。"
     when :host_binding_mismatch then "購入内容と保存済みHost情報が一致しません。"
     when :invalid_purchase_time, :invalid_host_validity, :challenge_time_mismatch
       "合成デモ時刻が有効期間の条件を満たしません。"
@@ -37,7 +56,7 @@ class ScenarioVerifier
       result.rejected? ? "固定profileの検査条件を満たしません。" : "検証を完了できません。購入処理は行いません。"
     end
     Outcome.new(title:, reason:, status: result.status, code: result.code,
-      evidence_present: !result.evidence.nil?, time: full.fetch("verified_at"))
+      evidence_present: !result.evidence.nil?, time: now)
   rescue StandardError, LoadError
     Outcome.new(title: "検証不能", reason: "検証を完了できません。購入処理は行いません。",
       status: :unavailable, code: :demo_verification_unavailable, evidence_present: false, time: nil)
