@@ -3,6 +3,7 @@ require "rails"
 require "action_controller/railtie"
 require "securerandom"
 require_relative "../app/services/scenario_verifier"
+require_relative "../app/services/multi_item_scenario"
 
 module PurchaseDemo
   class Application < Rails::Application
@@ -18,6 +19,7 @@ module PurchaseDemo
     routes.append do
       root "demo#index"
       get "/merchant", to: "demo#merchant"
+      get "/multi-item", to: "demo#multi_item"
       post "/verify", to: "demo#verify"
     end
   end

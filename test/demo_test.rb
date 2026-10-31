@@ -10,7 +10,7 @@ class DemoTest < Minitest::Test
     response = client.get("/merchant", "HTTP_HOST" => "localhost")
     assert_equal 200, response.status
     assert_includes response.body, 'id="merchant-scenario"'
-    assert_includes response.body, "0.5.0"
+    assert_includes response.body, Gem.loaded_specs.fetch("ap2_mandate_verifier").version.to_s
     assert_includes response.body, "Success"
     assert_includes response.body, "Error"
     assert_includes response.body, "購入成功通知 false"
@@ -64,7 +64,7 @@ class DemoTest < Minitest::Test
     %w[valid tampered expired missing_currency valid].each do |scenario|
       page = client.get("/", "HTTP_HOST" => "localhost")
       assert_equal 200, page.status
-      assert_includes page.body, "0.5.0"
+      assert_includes page.body, Gem.loaded_specs.fetch("ap2_mandate_verifier").version.to_s
       assert_includes page.body, "入力組み立て支援"
       refute_includes page.body, "公開前候補"
       assert_includes page.body, "検証成功・Evidenceは購入許可ではありません。"

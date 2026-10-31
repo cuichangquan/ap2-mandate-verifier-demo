@@ -5,6 +5,15 @@
 <body><main><small>AP2 MANDATE VERIFIER · <%= Gem.loaded_specs.fetch("ap2_mandate_verifier").version %> · LOCAL DEMO</small>
 <h1>購入委任を、検証してみる。</h1>
 <p><a href="/merchant">販売者署名と成功・拒否Receiptを試す</a></p>
+<% if MultiItemScenario.available? %><p><a href="/multi-item">複数商品・数量の候補デモを試す</a></p><% end %>
+<% if @multi_item_scenarios %><section id="multi-item-scenario"><h2>複数商品・数量（公開前候補、合成データ）</h2>
+<p>明示profile: <code><%= MultiItemScenario::PROFILE %> v1</code>。Coffeeを2個、Teaを3個の許可条件で照合します。要件IDと明細IDは別です。</p>
+<% @multi_item_scenarios.each_with_index do |scenario, index| %>
+<h3><%= index.zero? ? "正常な複数明細" : "2件目の数量不足" %></h3>
+<ul><% scenario[:lines].each do |line| %><li><%= line["item"]["title"] %>：<%= line["quantity"] %>個 × <%= line["item"]["price"] %> cents</li><% end %></ul>
+<p>USD合計: <%= scenario[:amount] %> cents ／ <code><%= scenario[:status] %> / <%= scenario[:code] %></code><br>Evidence: <%= scenario[:evidence_present] ? "あり（検証事実のみ）" : "なし" %></p>
+<% scenario[:rows].each do |row| %><p><strong><%= row[:outcome] %></strong>：真正性 <%= row[:verified] %> ／ 購入成功通知 <%= row[:purchase_succeeded] %> ／ 拒否通知 <%= row[:purchase_rejected] %></p><% end %>
+<% end %><p>署名と全検証を通した後も、業務結果はアプリが決めます。真正なError Receiptは購入成功を意味しません。nonce消費・決済・注文更新は実行しません。</p></section><% end %>
 <% if @merchant_scenario %><section id="merchant-scenario"><h2>販売者署名とCheckout Receipt（合成データ）</h2>
 <p>Checkout hash: <code><%= @merchant_scenario[:checkout_hash] %></code><br>
 Mandate reference: <code><%= @merchant_scenario[:reference] %></code></p>

@@ -11,6 +11,13 @@ class DemoController < ActionController::Base
     render :index
   end
 
+  def multi_item
+    return head :not_found unless MultiItemScenario.available?
+    @multi_item_scenarios = [MultiItemScenario.call, MultiItemScenario.call(short_second: true)]
+    response.headers["Cache-Control"] = "no-store"
+    render :index
+  end
+
   def verify
     response.headers["Cache-Control"] = "no-store"
     unless params[:scenario].is_a?(String) && ScenarioVerifier::LABELS.key?(params[:scenario])

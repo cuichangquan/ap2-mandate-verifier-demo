@@ -1,0 +1,16 @@
+*
+!ap2-mandate-verifier/
+!ap2-mandate-verifier/**
+!ap2-mandate-verifier-demo/
+!ap2-mandate-verifier-demo/**
+**/.git
+**/log
+**/tmp
+**/evidence
+**/vendor
+**/.bundle
+**/.env
+**/.env.*
+**/*.gem
+**/*.pem
+**/*.key

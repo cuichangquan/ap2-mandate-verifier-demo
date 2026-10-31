@@ -2,6 +2,30 @@
 
 公開済み [ap2_mandate_verifier 0.5.0](https://rubygems.org/gems/ap2_mandate_verifier/versions/0.5.0) を使うRailsデモです。通常画面でInputBuilderの検証・診断・Evidenceと、販売者のCheckout JWT署名・成功／拒否Receiptを試せます。
 
+複数商品・数量は **未公開0.6.0候補** の専用起動で確認します。公開0.5.0の通常起動は引き続き単一商品profileです。候補は公開操作・本番GOを意味しません。
+
+## 複数明細の候補デモ
+
+本体とデモを同じ親ディレクトリへ配置し、親ディレクトリから実行します。`Dockerfile.candidate` は本体の現地sourceからGemをbuildし、候補Gemを通常installします。公開Gemの取得・公開物の置換はしません。Rails依存は既存lockを維持し、候補Gem自身のchecksumだけをbuildしたbytesから設定します。
+
+```sh
+docker build --platform linux/arm64 --pull=false \
+  -f ap2-mandate-verifier-demo/Dockerfile.candidate -t ap2-multi-item-demo:candidate .
+docker run --rm --name ap2-multi-item-demo --cpus 1 --memory 512m --pids-limit 128 \
+  -p 127.0.0.1:3100:3000 ap2-multi-item-demo:candidate \
+  timeout 3600 bundle exec puma -b tcp://0.0.0.0:3000 -t 1:1 config.ru
+```
+
+http://127.0.0.1:3100/multi-item はCoffee2個＋Tea3個の成功と、Tea2個だけの不足を比較します。成功時はEvidenceがあり、不足時は `rejected / constraint_mismatch`、Evidenceなしです。真正なSuccess／Error Receiptはそれぞれ業務上の成功／拒否を示し、Errorでも署名検証はtrueです。ページは入力構築・prepare・保存・restore・現在状態のverify・Checkout署名・Receipt署名と検証を公開APIで実行します。Issuer／Agent envelopeはデモ内の合成試験処理で、製品発行APIではありません。
+
+```sh
+docker run --rm --network none --cpus 1 --memory 512m --pids-limit 128 \
+  ap2-multi-item-demo:candidate sh -c \
+  'timeout 120 bundle exec ruby test/demo_test.rb && timeout 60 bundle exec ruby test/merchant_scenario_test.rb && timeout 60 bundle exec ruby test/multi_item_scenario_test.rb'
+```
+
+明示profileは `ap2.checkout.single_merchant_multi_item` v1です。最大8明細・8要件・各8候補、商品IDで数量を完全割当てし、要件IDと明細IDは別です。同じ商品の複数行を保持し、余剰・不足・二重充当は拒否します。税／送料／割引・複数販売者・実決済は対象外です。[本体の複数明細契約](https://github.com/cuichangquan/ap2-mandate-verifier/blob/main/docs/MULTI_ITEM_CHECKOUT.md)と、[今回の検証記録](docs/MULTI_ITEM_CANDIDATE.md)を参照してください。
+
 | ケース | 結果 |
 | --- | --- |
 | 正常 | verified_research / scoped_research_verified、Evidenceあり |
