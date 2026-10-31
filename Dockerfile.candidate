@@ -1,0 +1,20 @@
+# Build from the parent directory containing both repository checkouts.
+# Ordinary Gem installation; this never publishes the candidate.
+FROM ruby:4.0.9-trixie@sha256:42c18f0c9807ba1349c0253617d7f08ef98b815463b2f7785d97c4efdfd80f4d
+WORKDIR /source
+COPY ap2-mandate-verifier/ /source/
+RUN gem build ap2_mandate_verifier.gemspec --output /tmp/candidate.gem
+WORKDIR /demo
+COPY ap2-mandate-verifier-demo/Gemfile.candidate /demo/Gemfile
+COPY ap2-mandate-verifier-demo/Gemfile.lock /demo/Gemfile.lock
+# Keep all Rails dependencies at their existing lock; replace only the verifier.
+RUN sed -i 's/ap2_mandate_verifier (0.5.0)/ap2_mandate_verifier (0.6.0)/; s/ap2_mandate_verifier (= 0.5.0)/ap2_mandate_verifier (= 0.6.0)/' Gemfile.lock && \
+    candidate_sha="$(sha256sum /tmp/candidate.gem | cut -d ' ' -f 1)" && \
+    sed -i "s/ap2_mandate_verifier (0.6.0) sha256=.*/ap2_mandate_verifier (0.6.0) sha256=$candidate_sha/" Gemfile.lock && \
+    mkdir -p vendor/cache && cp /tmp/candidate.gem vendor/cache/ap2_mandate_verifier-0.6.0.gem && \
+    BUNDLE_FROZEN=true bundle install && cp Gemfile.lock /tmp/candidate-Gemfile.lock
+COPY ap2-mandate-verifier-demo/ /demo/
+RUN cp Gemfile.candidate Gemfile && cp /tmp/candidate-Gemfile.lock Gemfile.lock
+ENV RAILS_ENV=development
+EXPOSE 3000
+CMD ["bundle", "exec", "puma", "-b", "tcp://0.0.0.0:3000", "-t", "1:1", "config.ru"]
