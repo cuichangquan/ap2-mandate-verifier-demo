@@ -1,5 +1,5 @@
 # Build from the parent directory containing both repository checkouts.
-# Development-source comparison only; normal startup uses published 0.6.0.
+# Historical 0.6.0 source comparison only; normal startup uses published 0.7.0.
 # This never replaces or publishes the official Gem.
 FROM ruby:4.0.9-trixie@sha256:42c18f0c9807ba1349c0253617d7f08ef98b815463b2f7785d97c4efdfd80f4d
 WORKDIR /source
@@ -7,7 +7,7 @@ COPY ap2-mandate-verifier/ /source/
 RUN gem build ap2_mandate_verifier.gemspec --output /tmp/candidate.gem
 WORKDIR /demo
 COPY ap2-mandate-verifier-demo/Gemfile.candidate /demo/Gemfile
-COPY ap2-mandate-verifier-demo/Gemfile.lock /demo/Gemfile.lock
+COPY ap2-mandate-verifier-demo/Gemfile.candidate.lock /demo/Gemfile.lock
 # Keep all Rails dependencies at their existing lock; replace only the verifier.
 RUN candidate_sha="$(sha256sum /tmp/candidate.gem | cut -d ' ' -f 1)" && \
     sed -i "s/ap2_mandate_verifier (0.6.0) sha256=.*/ap2_mandate_verifier (0.6.0) sha256=$candidate_sha/" Gemfile.lock && \
