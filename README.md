@@ -65,6 +65,9 @@ Dockerfileは公式Gemの **64,000 bytes** とSHA256 `baab8c68355b5e6c9351e7d86a
 
 通常利用は上記Dockerfileだけで完結します。`Dockerfile.candidate`／`Gemfile.candidate` はローカルsourceの比較用として別経路に残しています。公開Gemと同じversion表示でもそのbuild物は公開bytesの証明にならず、公開Gemの代用にしません。この公開後整備では候補Gemをbuildしません。
 
+この比較経路は歴史的な0.6.0 source用です。`Gemfile.candidate.lock`を専用に使い、
+0.7.0の通常起動lockと混ぜません。現行0.7.0 sourceの候補build手順ではありません。
+
 過去の候補起動・試験は[0.6.0候補の歴史記録](docs/MULTI_ITEM_CANDIDATE.md)へ、さらに古い候補は[CANDIDATE.md](CANDIDATE.md)へ残しています。
 
 ![歴史記録：公式0.5.0による成功・拒否Receiptの実画面](docs/images/merchant050.jpg)

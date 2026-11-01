@@ -56,3 +56,12 @@ constraint_mismatchとEvidenceなし、真正Success/Errorを確認しました�
 結果不明時の照会はアプリ責任。受理やReceipt真正性は実購入／実決済成功ではありません。
 他OS／architecture、デモのMRI3.4.12、最悪性能／並行負荷、実Issuer／実鍵／実決済／
 公開Web／本番運用はNOT_RUN。ホスト導入・追加費用・security設定変更なし。
+
+## 独立レビューによる比較経路の是正
+
+GitHub Codexが最新HEADで、旧0.6.0比較用Gemfileと通常0.7.0lockの共有による不整合を
+P2として指摘しました。旧mainのlockを正確に`Gemfile.candidate.lock`へ分離し、
+`Dockerfile.candidate`の初期COPY先をそちらへ変更。0.6.0比較経路の契約を保ち、
+通常0.7.0経路へ混ぜません。既存0.6.0imageで専用Gemfile/lockの
+`BUNDLE_FROZEN=true bundle check`がoffline成功。指摘を是正し最新HEADへ再レビューします。
+候補Gem buildは今回の禁止範囲なのでNOT_RUNです。通常デモとその試験経路は変更しません。
