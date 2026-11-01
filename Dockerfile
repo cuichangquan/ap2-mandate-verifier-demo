@@ -2,11 +2,11 @@
 FROM ruby:4.0.9-trixie@sha256:42c18f0c9807ba1349c0253617d7f08ef98b815463b2f7785d97c4efdfd80f4d
 WORKDIR /demo
 COPY Gemfile Gemfile.lock ./
-RUN gem fetch ap2_mandate_verifier --version 0.6.0 && \
-    test "$(wc -c < ap2_mandate_verifier-0.6.0.gem)" -eq 56832 && \
-    echo 'ff669a62717f91b2295b3cea1b68c6c4143c490d98df071fd322ad4b0007195d  ap2_mandate_verifier-0.6.0.gem' | sha256sum -c - && \
+RUN gem fetch ap2_mandate_verifier --version 0.7.0 && \
+    test "$(wc -c < ap2_mandate_verifier-0.7.0.gem)" -eq 64000 && \
+    echo 'baab8c68355b5e6c9351e7d86a836fab50652cdad662bbc99d1676c5e6134447  ap2_mandate_verifier-0.7.0.gem' | sha256sum -c - && \
     mkdir -p vendor/cache && \
-    mv ap2_mandate_verifier-0.6.0.gem vendor/cache/ && \
+    mv ap2_mandate_verifier-0.7.0.gem vendor/cache/ && \
     BUNDLE_FROZEN=true bundle install && \
     cp Gemfile.lock /tmp/resolved-Gemfile.lock
 COPY . .
