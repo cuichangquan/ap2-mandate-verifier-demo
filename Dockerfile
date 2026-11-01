@@ -2,13 +2,15 @@
 FROM ruby:4.0.9-trixie@sha256:42c18f0c9807ba1349c0253617d7f08ef98b815463b2f7785d97c4efdfd80f4d
 WORKDIR /demo
 COPY Gemfile Gemfile.lock ./
-RUN gem fetch ap2_mandate_verifier --version 0.8.0 && \
-    test "$(wc -c < ap2_mandate_verifier-0.8.0.gem)" -eq 79872 && \
-    echo '6c07664e4291aa8bc025b152075869322411a0d99861e1267959f1794e99acec  ap2_mandate_verifier-0.8.0.gem' | sha256sum -c - && \
+COPY test/installed_gem_check.rb test/installed_gem_check.rb
+RUN gem fetch ap2_mandate_verifier --version 1.0.0 && \
+    test "$(wc -c < ap2_mandate_verifier-1.0.0.gem)" -eq 102912 && \
+    echo 'a107101b0178c54ba417be7a2bd7e22feb2fd9a07bda089043e8c5ea8e65e12b  ap2_mandate_verifier-1.0.0.gem' | sha256sum -c - && \
     mkdir -p vendor/cache && \
-    mv ap2_mandate_verifier-0.8.0.gem vendor/cache/ && \
+    mv ap2_mandate_verifier-1.0.0.gem vendor/cache/ && \
     BUNDLE_FROZEN=true bundle install && \
-    cp Gemfile.lock /tmp/resolved-Gemfile.lock
+    cp Gemfile.lock /tmp/resolved-Gemfile.lock && \
+    bundle exec ruby test/installed_gem_check.rb
 COPY . .
 ENV RAILS_ENV=development
 EXPOSE 3000
