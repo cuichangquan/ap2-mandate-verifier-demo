@@ -1,5 +1,7 @@
 # AP2 購入委任・販売者署名のローカルデモ
 
+Optional **unpublished 1.1.0 Payment candidate**: [plain Ruby example and boundaries](docs/PAYMENT_CANDIDATE.md). The normal Rails demo remains on published 1.0.0. 次期Payment候補は未公開です。
+
 公開済み [ap2_mandate_verifier 1.0.0](https://rubygems.org/gems/ap2_mandate_verifier/versions/1.0.0) を通常起動で使うRailsデモです。InputBuilderの検証・診断・Evidence、販売者のCheckout JWT署名、複数商品・数量、真正なSuccess／Error Receiptを試せます。
 
 ## 条件付き購入委任はRuby単体例から
