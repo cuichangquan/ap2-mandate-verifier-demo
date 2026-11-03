@@ -1,0 +1,12 @@
+# Opt-in only. Build normal published1.1.0 demo first; never rebuild the candidate.
+ARG DEMO_BASE=ap2-mandate-verifier-demo:local
+FROM ${DEMO_BASE}
+ARG CANDIDATE_SHA256
+COPY candidate/ap2_mandate_verifier-1.2.0.gem /tmp/selective-candidate.gem
+RUN case "$CANDIDATE_SHA256" in *[!0-9a-f]*|"") exit 1;; esac && \
+    test "${#CANDIDATE_SHA256}" -eq 64 && \
+    printf '%s  %s\n' "$CANDIDATE_SHA256" /tmp/selective-candidate.gem | sha256sum --check && \
+    gem install --local --no-document /tmp/selective-candidate.gem && \
+    rm /tmp/selective-candidate.gem
+COPY examples/selective_payment_candidate.rb /demo/examples/selective_payment_candidate.rb
+CMD ["ruby", "examples/selective_payment_candidate.rb"]
