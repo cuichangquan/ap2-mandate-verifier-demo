@@ -6,19 +6,19 @@ require "digest"
 require "json"
 require "tmpdir"
 
-artifact = ARGV.fetch(0, "vendor/cache/ap2_mandate_verifier-1.0.0.gem")
-expected_sha = "a107101b0178c54ba417be7a2bd7e22feb2fd9a07bda089043e8c5ea8e65e12b"
-abort "official Gem identity mismatch" unless File.size(artifact) == 102_912 &&
+artifact = ARGV.fetch(0, "vendor/cache/ap2_mandate_verifier-1.1.0.gem")
+expected_sha = "4c64cf5b6c61ae4395577828093a6f4022c35cf18b6ad1bcfcb9f95fbb4f43c9"
+abort "official Gem identity mismatch" unless File.size(artifact) == 115_200 &&
   Digest::SHA256.file(artifact).hexdigest == expected_sha
 package = Gem::Package.new(artifact)
 package.verify
 spec = Gem.loaded_specs.fetch("ap2_mandate_verifier")
 root = File.realpath(File.expand_path("..", __dir__))
-abort "normal installed Gem required" unless spec.version.to_s == "1.0.0" &&
+abort "normal installed Gem required" unless spec.version.to_s == "1.1.0" &&
   !File.realpath(spec.full_gem_path).start_with?(root + "/")
 files = package.contents.sort
-abort "payload inventory mismatch" unless files.size == 33 && files == package.spec.files.sort &&
-  package.spec.name == "ap2_mandate_verifier" && package.spec.version.to_s == "1.0.0" &&
+abort "payload inventory mismatch" unless files.size == 38 && files == package.spec.files.sort &&
+  package.spec.name == "ap2_mandate_verifier" && package.spec.version.to_s == "1.1.0" &&
   package.spec.extensions.empty?
 dependencies = {"base64" => "= 0.3.0", "digest" => "= 3.2.1", "json" => "= 2.19.9",
   "jwt" => "= 3.3.0", "openssl" => "= 4.0.2"}
