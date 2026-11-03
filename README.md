@@ -76,7 +76,7 @@ docker run --rm --network none --cpus 1 --memory 512m --pids-limit 128 \
 
 MRI4.0.9、Bundler4.0.20、railties/actionpack8.0.4、Puma6.6.1、Minitest5.27.0。Docker baseは既存の公式arm64 digestに固定しています。Verifier1.1.0とJSON2.19.9／JWT3.3.0／base640.3.0／OpenSSL gem4.0.2／Digest3.2.1を使用します。
 
-Dockerfileは公式Gemの **102,912 bytes** とSHA256 `a107101b0178c54ba417be7a2bd7e22feb2fd9a07bda089043e8c5ea8e65e12b` を導入前に照合し、同じbytesをBundler cacheへ渡します。通常導入後も全33ファイルのarchive/installed一致、依存・Ruby要件、source外からのロードを検査します。Gemは再buildしません。公開sourceは [`59e344a`](https://github.com/cuichangquan/ap2-mandate-verifier/tree/59e344ad865ed867d0993120456f9411d82bcdec)。取得／provider／依存の失敗時は停止し、lockやchecksumを緩めません。
+Dockerfileは公式Gemの **115,200 bytes** とSHA256 `4c64cf5b6c61ae4395577828093a6f4022c35cf18b6ad1bcfcb9f95fbb4f43c9` を導入前に照合し、同じbytesをBundler cacheへ渡します。通常導入後も全38ファイルのarchive/installed一致、依存・Ruby要件、source外からのロードを検査します。Gemは再buildしません。公開sourceは [`89e779c`](https://github.com/cuichangquan/ap2-mandate-verifier/tree/89e779cadeac0ea7941e68f12951eed13f1b8081)。取得／provider／依存の失敗時は停止し、lockやchecksumを緩めません。
 
 `ScenarioVerifier` は独立した業務情報と署名原文からprepare→保存→restore→現在状態→verifyを行います。保存したB／digestを現在値へ修復せず、利用者入力から鍵・期待注文を推測しません。
 
