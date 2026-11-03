@@ -1,4 +1,5 @@
-# Opt-in only. Build normal published1.1.0 demo first; never rebuild the candidate.
+# Historical prepublication route. Normal Dockerfile now installs public1.2.0.
+# Local archive comparison only; never rebuild or treat it as publication proof.
 ARG DEMO_BASE=ap2-mandate-verifier-demo:local
 FROM ${DEMO_BASE}
 ARG CANDIDATE_SHA256
