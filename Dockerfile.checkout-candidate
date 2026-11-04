@@ -1,0 +1,12 @@
+# Local 1.3.0 candidate only; normal Rails route stays on published 1.2.0.
+ARG DEMO_BASE=ap2-mandate-verifier-demo:local
+FROM ${DEMO_BASE}
+ARG CANDIDATE_SHA256
+COPY candidate/ap2_mandate_verifier-1.3.0.gem /tmp/checkout-candidate.gem
+RUN case "$CANDIDATE_SHA256" in *[!0-9a-f]*|"") exit 1;; esac && \
+    test "${#CANDIDATE_SHA256}" -eq 64 && \
+    printf '%s  %s\n' "$CANDIDATE_SHA256" /tmp/checkout-candidate.gem | sha256sum --check && \
+    gem install --local --no-document /tmp/checkout-candidate.gem && \
+    rm /tmp/checkout-candidate.gem
+COPY examples/selective_checkout_candidate.rb /demo/examples/selective_checkout_candidate.rb
+CMD ["ruby", "examples/selective_checkout_candidate.rb"]
