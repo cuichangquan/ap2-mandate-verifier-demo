@@ -1,0 +1,8 @@
+*
+!candidate/
+candidate/**
+!candidate/ap2_mandate_verifier-1.5.0.gem
+!candidate/sqlite3.gem
+!examples/
+examples/**
+!examples/payment_acceptance_candidate.rb

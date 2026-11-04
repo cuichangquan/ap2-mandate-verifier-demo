@@ -1,5 +1,7 @@
 # AP2 購入委任・販売者署名のローカルデモ
 
+**1.5.0候補：** [Payment受理・再送・結果不明からの復旧例](docs/PAYMENT_ACCEPTANCE_CANDIDATE.md)。ローカルの合成SQLite/mockデモで、通常Railsは公開1.4.0です。
+
 **公開済み1.4.0：** [PISP・支払い実行日時を指定するRuby例と検証記録](docs/PUBLISHED_140.md)。通常RailsとRuby単体例は公開Gemを使用します。[旧候補専用経路](docs/PAYMENT_POLICY_CANDIDATE.md)は履歴として保持しています。
 
 **公開済み1.4.0：** [CheckoutとPaymentを両方選択的に開示するローカル例と検証記録](docs/PUBLISHED_140.md)。通常RailsとRuby単体例は公開Gemを使用します。[旧候補専用経路](docs/SELECTIVE_CHECKOUT_CANDIDATE.md)は履歴として保持しています。
