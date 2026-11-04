@@ -1,0 +1,11 @@
+# Local1.4.0 candidate only; normal Rails remains public1.3.0.
+ARG DEMO_BASE=ap2-mandate-verifier-demo:local
+FROM ${DEMO_BASE}
+ARG CANDIDATE_SHA256
+COPY candidate/ap2_mandate_verifier-1.4.0.gem /tmp/policy-candidate.gem
+RUN case "$CANDIDATE_SHA256" in *[!0-9a-f]*|"") exit 1;; esac && \
+    test "${#CANDIDATE_SHA256}" -eq 64 && \
+    printf '%s  %s\n' "$CANDIDATE_SHA256" /tmp/policy-candidate.gem | sha256sum --check && \
+    gem install --local --no-document /tmp/policy-candidate.gem && rm /tmp/policy-candidate.gem
+COPY examples/payment_policy_candidate.rb /demo/examples/payment_policy_candidate.rb
+CMD ["ruby", "examples/payment_policy_candidate.rb"]

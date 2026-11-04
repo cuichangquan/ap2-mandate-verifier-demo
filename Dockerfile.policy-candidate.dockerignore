@@ -1,0 +1,7 @@
+*
+!candidate/
+candidate/**
+!candidate/ap2_mandate_verifier-1.4.0.gem
+!examples/
+examples/**
+!examples/payment_policy_candidate.rb

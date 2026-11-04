@@ -1,5 +1,7 @@
 # AP2 購入委任・販売者署名のローカルデモ
 
+**1.4.0候補：** [PISP・支払い実行日時を指定するRuby例](docs/PAYMENT_POLICY_CANDIDATE.md)。公開前の候補専用です。通常Railsは公開1.3.0を使用します。
+
 **公開済み1.3.0：** [CheckoutとPaymentを両方選択的に開示するローカル例と検証記録](docs/PUBLISHED_130.md)。通常RailsとRuby単体例は公開Gemを使用します。[旧候補専用経路](docs/SELECTIVE_CHECKOUT_CANDIDATE.md)は履歴として保持しています。
 
 **公開済み1.3.0：** [Payment候補の選択的開示と保持／送信比較](docs/SELECTIVE_PAYMENT_CANDIDATE.md)。通常起動も公開1.3.0を使用します。旧`Payment`の完全内容profileと明示`SelectivePayment` profileを区別します。
