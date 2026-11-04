@@ -1,6 +1,6 @@
 # 公開1.3.0へのデモ更新と検証
 
-[RubyGems 1.3.0](https://rubygems.org/gems/ap2_mandate_verifier/versions/1.3.0) は2026-11-04T00:29:50.504Z登録。通常Docker buildが取得した実配布Gemは137,728 bytes、SHA256 `fb95cf669bc4cba1cc1360653bfd7ae8aec58404f13810f6d5a8fb205bc8841d`。承認候補と一致します。sourceは [`fd9e7a3`](https://github.com/cuichangquan/ap2-mandate-verifier/tree/fd9e7a3f0a2319089be7197a4d585083861884f1)。
+[RubyGems 1.3.0](https://rubygems.org/gems/ap2_mandate_verifier/versions/1.3.0) は2026-11-04T00:29:50.504Z登録。通常Docker buildが取得した実配布Gemは137,728 bytes、SHA256 `fb95cf669bc4cba1cc1360653bfd7ae8aec58404f13810f6d5a8fb205bc8841d`。承認候補と一致します。正式リリースsourceは [`36c8702`](https://github.com/cuichangquan/ap2-mandate-verifier/tree/36c87026007e2aa221139c54c0ca0055485cb296)。レビュー済み候補source [`fd9e7a3`](https://github.com/cuichangquan/ap2-mandate-verifier/tree/fd9e7a3f0a2319089be7197a4d585083861884f1) と同一tree `91c67d8f88afae58f7fea143b55f0b700da885e9` です。
 
 Gemfileと通常lockを公開1.3.0へ更新しました。lock差分はVerifier版2箇所とchecksumだけで、他の依存版・制約・checksumは不変です。Dockerfileは取得Gemのsize/SHAを照合し、その同じbytesをBundler cacheへ渡してfrozen installします。導入後は全49ファイルのarchive/installed一致、固定5依存、Ruby要件、demo外からのロードを検査します。Gemの再build・再pushは行いません。
 
