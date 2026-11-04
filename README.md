@@ -1,5 +1,7 @@
 # AP2 購入委任・販売者署名のローカルデモ
 
+**1.3.0候補：** [CheckoutとPaymentを両方選択的に開示するローカル例](docs/SELECTIVE_CHECKOUT_CANDIDATE.md)。公開前の候補専用経路です。通常Railsは公開1.2.0を使用します。
+
 **公開済み1.2.0：** [Payment候補の選択的開示と保持／送信比較](docs/SELECTIVE_PAYMENT_CANDIDATE.md)。通常起動も公開1.2.0を使用します。旧`Payment`の完全内容profileと明示`SelectivePayment` profileを区別します。
 
 Full-content Payment (since1.1.0): [plain Ruby Direct/conditional example and boundaries](docs/PAYMENT_CANDIDATE.md). 通常起動も公開済み1.2.0を使用します。

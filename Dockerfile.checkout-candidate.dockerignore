@@ -1,0 +1,7 @@
+*
+!candidate/
+candidate/**
+!candidate/ap2_mandate_verifier-1.3.0.gem
+!examples/
+examples/**
+!examples/selective_checkout_candidate.rb
