@@ -1,14 +1,14 @@
 # AP2 購入委任・販売者署名のローカルデモ
 
-**1.4.0候補：** [PISP・支払い実行日時を指定するRuby例](docs/PAYMENT_POLICY_CANDIDATE.md)。公開前の候補専用です。通常Railsは公開1.3.0を使用します。
+**公開済み1.4.0：** [PISP・支払い実行日時を指定するRuby例と検証記録](docs/PUBLISHED_140.md)。通常RailsとRuby単体例は公開Gemを使用します。[旧候補専用経路](docs/PAYMENT_POLICY_CANDIDATE.md)は履歴として保持しています。
 
-**公開済み1.3.0：** [CheckoutとPaymentを両方選択的に開示するローカル例と検証記録](docs/PUBLISHED_130.md)。通常RailsとRuby単体例は公開Gemを使用します。[旧候補専用経路](docs/SELECTIVE_CHECKOUT_CANDIDATE.md)は履歴として保持しています。
+**公開済み1.4.0：** [CheckoutとPaymentを両方選択的に開示するローカル例と検証記録](docs/PUBLISHED_140.md)。通常RailsとRuby単体例は公開Gemを使用します。[旧候補専用経路](docs/SELECTIVE_CHECKOUT_CANDIDATE.md)は履歴として保持しています。
 
-**公開済み1.3.0：** [Payment候補の選択的開示と保持／送信比較](docs/SELECTIVE_PAYMENT_CANDIDATE.md)。通常起動も公開1.3.0を使用します。旧`Payment`の完全内容profileと明示`SelectivePayment` profileを区別します。
+**公開済み1.4.0：** [Payment候補の選択的開示と保持／送信比較](docs/SELECTIVE_PAYMENT_CANDIDATE.md)。通常起動も公開1.4.0を使用します。旧`Payment`の完全内容profileと明示`SelectivePayment` profileを区別します。
 
-Full-content Payment (since1.1.0): [plain Ruby Direct/conditional example and boundaries](docs/PAYMENT_CANDIDATE.md). 通常起動も公開済み1.3.0を使用します。
+Full-content Payment (since1.1.0): [plain Ruby Direct/conditional example and boundaries](docs/PAYMENT_CANDIDATE.md). 通常起動も公開済み1.4.0を使用します。
 
-公開済み [ap2_mandate_verifier 1.3.0](https://rubygems.org/gems/ap2_mandate_verifier/versions/1.3.0) を通常起動で使うRailsデモです。InputBuilderの検証・診断・Evidence、販売者のCheckout JWT署名、複数商品・数量、真正なSuccess／Error Receiptを試せます。
+公開済み [ap2_mandate_verifier 1.4.0](https://rubygems.org/gems/ap2_mandate_verifier/versions/1.4.0) を通常起動で使うRailsデモです。InputBuilderの検証・診断・Evidence、販売者のCheckout JWT署名、複数商品・数量、真正なSuccess／Error Receiptを試せます。
 
 ## 条件付き購入委任はRuby単体例から
 
@@ -22,8 +22,8 @@ Rubyだけで組み立てられます。[同梱の完全実行例](https://githu
 [短いRelease例](https://github.com/cuichangquan/ap2-mandate-verifier/blob/main/docs/RELEASE_100.md)を主な導入経路にしてください。
 
 ```sh
-gem install ap2_mandate_verifier --version 1.3.0
-ruby "$(ruby -e 'puts Gem::Specification.find_by_name("ap2_mandate_verifier", "1.3.0").full_gem_path')/examples/conditional_checkout.rb"
+gem install ap2_mandate_verifier --version 1.4.0
+ruby "$(ruby -e 'puts Gem::Specification.find_by_name("ap2_mandate_verifier", "1.4.0").full_gem_path')/examples/conditional_checkout.rb"
 ```
 
 以下のRails画面は既存のOpen→Agent Closed検証・販売者署名／Receiptの合成シナリオです。
@@ -43,7 +43,7 @@ docker run --rm --name ap2-mandate-verifier-demo \
   timeout 3600 bundle exec puma -b tcp://0.0.0.0:3000 -t 1:1 config.ru
 ```
 
-http://127.0.0.1:3100/ で従来の4検証ケースを選びます。「販売者署名と成功・拒否Receipt」と「複数商品・数量」のリンクから、各APIの結果を比較できます。画面の1.3.0・status/code・診断・Evidence・Receiptの真正性と業務結果を確認してください。終了は `docker stop ap2-mandate-verifier-demo`。Web公開や共有cacheのpruneは行いません。
+http://127.0.0.1:3100/ で従来の4検証ケースを選びます。「販売者署名と成功・拒否Receipt」と「複数商品・数量」のリンクから、各APIの結果を比較できます。画面の1.4.0・status/code・診断・Evidence・Receiptの真正性と業務結果を確認してください。終了は `docker stop ap2-mandate-verifier-demo`。Web公開や共有cacheのpruneは行いません。
 
 | ケース | 結果 |
 | --- | --- |
@@ -64,7 +64,7 @@ http://127.0.0.1:3100/multi-item はCoffee2個＋Tea3個の成功と、Tea2個�
 
 明示profileは `ap2.checkout.single_merchant_multi_item` v1です。最大8明細・8要件・各8候補、商品IDで数量を完全割当てし、要件IDと明細IDは別です。同じ商品の複数行を保持し、候補の重なりを支持し、余剰・不足・二重充当を拒否します。旧 `ap2.checkout.single_merchant_sku` v1は通常4ケースで引き続き利用し、定義と受理範囲は変えていません。
 
-税／送料／割引・複数販売者・実決済は対象外です。[複数明細契約](https://github.com/cuichangquan/ap2-mandate-verifier/blob/main/docs/MULTI_ITEM_CHECKOUT.md)、[公式Python SDKとの差異](https://github.com/cuichangquan/ap2-mandate-verifier/blob/main/docs/MULTI_ITEM_INTEROP.md)、[今回の公開Gem検証](docs/PUBLISHED_130.md)を参照してください。
+税／送料／割引・複数販売者・実決済は対象外です。[複数明細契約](https://github.com/cuichangquan/ap2-mandate-verifier/blob/main/docs/MULTI_ITEM_CHECKOUT.md)、[公式Python SDKとの差異](https://github.com/cuichangquan/ap2-mandate-verifier/blob/main/docs/MULTI_ITEM_INTEROP.md)、[今回の公開Gem検証](docs/PUBLISHED_140.md)を参照してください。
 
 **EvidenceもReceipt真正性も購入・決済の実行許可ではありません。** 業務結果はアプリが明示し、実決済・注文更新・nonce消費は行いません。すべて合成データ・メモリ内テスト鍵で、実Issuerの信頼を示しません。固定時計は1800000000、期限切れケースは1800000101です。
 
@@ -76,13 +76,13 @@ docker run --rm --network none --cpus 1 --memory 512m --pids-limit 128 \
   'timeout 120 bundle exec ruby test/demo_test.rb && timeout 60 bundle exec ruby test/merchant_scenario_test.rb && timeout 60 bundle exec ruby test/multi_item_scenario_test.rb'
 ```
 
-公開1.3.0のfresh build・今回の実測結果は[公開Gem検証記録](docs/PUBLISHED_130.md)へ記録します。過去の候補試験を今回のPASSとして数えません。
+公開1.4.0のfresh build・今回の実測結果は[公開Gem検証記録](docs/PUBLISHED_140.md)へ記録します。過去の候補試験を今回のPASSとして数えません。
 
 ## 固定構成・責任境界
 
-MRI4.0.9、Bundler4.0.20、railties/actionpack8.0.4、Puma6.6.1、Minitest5.27.0。Docker baseは既存の公式arm64 digestに固定しています。Verifier1.3.0とJSON2.19.9／JWT3.3.0／base640.3.0／OpenSSL gem4.0.2／Digest3.2.1を使用します。
+MRI4.0.9、Bundler4.0.20、railties/actionpack8.0.4、Puma6.6.1、Minitest5.27.0。Docker baseは既存の公式arm64 digestに固定しています。Verifier1.4.0とJSON2.19.9／JWT3.3.0／base640.3.0／OpenSSL gem4.0.2／Digest3.2.1を使用します。
 
-Dockerfileは公式Gemの **137,728 bytes** とSHA256 `fb95cf669bc4cba1cc1360653bfd7ae8aec58404f13810f6d5a8fb205bc8841d` を導入前に照合し、同じbytesをBundler cacheへ渡します。通常導入後も全49ファイルのarchive/installed一致、依存・Ruby要件、source外からのロードを検査します。Gemは再buildしません。正式リリースsourceは [`36c8702`](https://github.com/cuichangquan/ap2-mandate-verifier/tree/36c87026007e2aa221139c54c0ca0055485cb296)。レビュー済み候補source `fd9e7a3f0a2319089be7197a4d585083861884f1` と同一tree `91c67d8f88afae58f7fea143b55f0b700da885e9` です。取得／provider／依存の失敗時は停止し、lockやchecksumを緩めません。
+Dockerfileは公式Gemの **145,920 bytes** とSHA256 `ea82c6468f339ed280005e1a270a511b1a8594452ef3de6fb546de43aa6ba454` を導入前に照合し、同じbytesをBundler cacheへ渡します。通常導入後も全53ファイルのarchive/installed一致、依存・Ruby要件、source外からのロードを検査します。Gemは再buildしません。正式リリースsourceは [`b062479`](https://github.com/cuichangquan/ap2-mandate-verifier/tree/b0624799f4d9e7cecc3f5b72b5ed760a81ca456c)。レビュー済み候補source `76239c94d7d6966419ae05871fa58b158074a000` と同一tree `5075fe56f89b5f150627d9ad5db1e4a811f9b3e1` です。取得／provider／依存の失敗時は停止し、lockやchecksumを緩めません。
 
 `ScenarioVerifier` は独立した業務情報と署名原文からprepare→保存→restore→現在状態→verifyを行います。保存したB／digestを現在値へ修復せず、利用者入力から鍵・期待注文を推測しません。
 
@@ -93,7 +93,7 @@ Dockerfileは公式Gemの **137,728 bytes** とSHA256 `fb95cf669bc4cba1cc1360653
 通常利用は上記Dockerfileだけで完結します。`Dockerfile.candidate`／`Gemfile.candidate` はローカルsourceの比較用として別経路に残しています。公開Gemと同じversion表示でもそのbuild物は公開bytesの証明にならず、公開Gemの代用にしません。この公開後整備では候補Gemをbuildしません。
 
 この比較経路は歴史的な0.6.0 source用です。`Gemfile.candidate.lock`を専用に使い、
-1.3.0の通常起動lockと混ぜません。現行1.3.0 sourceの候補build手順ではありません。
+1.4.0の通常起動lockと混ぜません。現行1.4.0 sourceの候補build手順ではありません。
 
 過去の候補起動・試験は[0.6.0候補の歴史記録](docs/MULTI_ITEM_CANDIDATE.md)へ、さらに古い候補は[CANDIDATE.md](CANDIDATE.md)へ残しています。
 
@@ -136,4 +136,13 @@ docker run --rm --network none --cpus 1 --memory 512m --pids-limit 128 \
   ap2-mandate-verifier-demo:local timeout 120 bundle exec ruby examples/selective_checkout.rb
 ```
 
-公開1.3.0の同梱例を使い、販売者・商品候補を絞ったCheckoutとPaymentを続けて検証します。全要件・数量は残り、独立Host入力・原文hash・両Receipt結果まで確認します。販売者と商品候補は独立した許可集合で、相関条件を保証しません。最終購入許可・永続nonce消費・注文現在性・失効・実決済はアプリ責任です。
+公開1.4.0の同梱例を使い、販売者・商品候補を絞ったCheckoutとPaymentを続けて検証します。全要件・数量は残り、独立Host入力・原文hash・両Receipt結果まで確認します。販売者と商品候補は独立した許可集合で、相関条件を保証しません。最終購入許可・永続nonce消費・注文現在性・失効・実決済はアプリ責任です。
+
+## Published PISP + execution-date example
+
+```sh
+docker run --rm --network none --cpus 1 --memory 512m --pids-limit 128 \
+  ap2-mandate-verifier-demo:local timeout 120 bundle exec ruby examples/payment_policy.rb
+```
+
+明示profileでDirect・条件付き・選択的Paymentを試します。署名されたPISPと日時を独立したアプリの信頼済み実行予定と照合し、日時窓の包含境界をUTC瞬間として比較します。旧profileの意味は変わりません。これはQWAC認証、実行予約、実決済や精算の証明ではありません。
