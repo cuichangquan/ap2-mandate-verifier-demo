@@ -1,3 +1,6 @@
 # frozen_string_literal: true
-# Public1.2.0 example. Synthetic only; original filename retained as an alias.
-require_relative "selective_payment_candidate"
+# Published example. Synthetic only; no candidate archive or source overlay.
+gem "ap2_mandate_verifier", "= 1.3.0"
+spec = Gem::Specification.find_by_name("ap2_mandate_verifier", "1.3.0")
+require File.join(spec.full_gem_path, "examples/selective_payment.rb")
+SelectivePaymentExample.run
