@@ -1,0 +1,6 @@
+**
+!Dockerfile.acceptance
+!Dockerfile.acceptance.dockerignore
+!examples/
+examples/**
+!examples/payment_acceptance.rb
