@@ -1,0 +1,15 @@
+# Local1.5 candidate only; normal Rails stays public1.4.
+ARG DEMO_BASE=ap2-mandate-verifier-demo:local
+FROM ${DEMO_BASE}
+ARG CANDIDATE_SHA256
+ARG SQLITE_SHA256=e9aea2c2b3476fc875dd8a89313a9a2862818519c0186bfb5b56d6f57bb08d98
+COPY candidate/ap2_mandate_verifier-1.5.0.gem /tmp/replay-candidate.gem
+COPY candidate/sqlite3.gem /tmp/sqlite3.gem
+RUN case "$CANDIDATE_SHA256$SQLITE_SHA256" in *[!0-9a-f]*|"") exit 1;; esac && \
+    test "${#CANDIDATE_SHA256}" -eq 64 && test "${#SQLITE_SHA256}" -eq 64 && \
+    printf '%s  %s\n%s  %s\n' "$CANDIDATE_SHA256" /tmp/replay-candidate.gem "$SQLITE_SHA256" /tmp/sqlite3.gem | sha256sum --check && \
+    gem install --local --no-document /tmp/sqlite3.gem /tmp/replay-candidate.gem && \
+    ruby -e 'gem "sqlite3", "= 2.10.2"; require "sqlite3"; abort unless SQLite3::VERSION == "2.10.2"' && \
+    rm /tmp/sqlite3.gem /tmp/replay-candidate.gem
+COPY examples/payment_acceptance_candidate.rb /demo/examples/payment_acceptance_candidate.rb
+CMD ["ruby", "examples/payment_acceptance_candidate.rb"]
