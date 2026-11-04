@@ -4,7 +4,7 @@
 
 通常Gemfile/lock/Dockerfileを公開Gemへ更新します。lock差分はVerifier版2箇所とchecksumだけで、他の依存版・制約・checksumは不変です。size/SHAを照合した同じbytesをBundler cacheに渡してfrozen installし、全53ファイルのarchive/installed一致、固定5依存、Ruby要件、demo外からのロードを確認します。Gemの再build・再pushは行いません。
 
-固定arm64 Ruby4.0.9 baseから通常経路をfresh buildしました。初回はローカル編集でirbのprism下限制約も変えてしまい、frozen Bundlerが拒否しました。原因を特定して元の制約へ戻し、Verifier以外のlock差分がないことを再確認してbuild成功。以下は修正後の実配布Gemから作ったimageで、network none／CPU1／memory512m／pids128／timeout120秒で実測した結果です。
+固定arm64 Ruby4.0.9 baseから通常経路をfresh buildしました。以下は実配布Gemから作ったimageで、network none／CPU1／memory512m／pids128／timeout120秒で実測した結果です。
 
 | 確認 | 結果 |
 | --- | --- |
