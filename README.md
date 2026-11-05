@@ -1,43 +1,32 @@
-# AP2 購入委任・販売者署名のローカルデモ
+# AP2 Ruby SDK 1.6.0 — local learning demo
 
-**公開済み1.6.0：** [同じOpenを12の明示UTC月期間で使うLong profileと検証記録](docs/PUBLISHED_160.md)。通常Railsは公開Gemを使用します。[旧長期候補](docs/LONG_PAYMENT_CANDIDATE.md)は履歴として保持します。
+[English walkthrough](docs/QUICK_START.md) · [SDK日本語README](https://github.com/cuichangquan/ap2-mandate-verifier/blob/main/README.ja.md)
 
-**旧bounded候補：** [JPY・ON_DEMANDの回数／予算制約の履歴](docs/RECURRING_PAYMENT_CANDIDATE.md)。通常経路は公開1.6.0です。旧候補と長期MONTHLY profileを区別します。
+公開Gem **ap2_mandate_verifier 1.6.0**を使い、Checkout・Payment・Receiptの関係を試すローカルデモです。
+**すべて合成データで、本番決済は扱いません。検証成功と決済成功は別です。**
+SDK自体はRails非依存です。このリポジトリの画面だけがRailsを使います。
 
-**公開済み1.6.0：** [Payment受理・再送・結果不明からの復旧例と検証記録](docs/PUBLISHED_160.md)。通常Railsは公開Gemを使い、SQLite/mock例は任意のDocker追加経路で試せます。[旧候補経路](docs/PAYMENT_ACCEPTANCE_CANDIDATE.md)は履歴として保持します。
+## 初めての方へ：試す順序
 
-**公開済み1.6.0：** [PISP・支払い実行日時を指定するRuby例と検証記録](docs/PUBLISHED_160.md)。通常RailsとRuby単体例は公開Gemを使用します。[旧候補専用経路](docs/PAYMENT_POLICY_CANDIDATE.md)は履歴として保持しています。
+1. 下のDocker手順でimageを用意し、画面の正常・改ざん・期限切れ・入力不足を比較します。
+2. `/merchant`で真正なSuccess／Error Receipt、`/multi-item`で数量不足の拒否を比較します。
+3. 同じimageでRubyのCheckout発行→提示→検証、Payment→Receiptを実行します。
+4. 任意のSQLite追加imageで、12か月の長期Openと累計予算超過を比較します。
 
-**公開済み1.6.0：** [CheckoutとPaymentを両方選択的に開示するローカル例と検証記録](docs/PUBLISHED_160.md)。通常RailsとRuby単体例は公開Gemを使用します。[旧候補専用経路](docs/SELECTIVE_CHECKOUT_CANDIDATE.md)は履歴として保持しています。
+| 体験 | 実行方法 | 見るポイント |
+| --- | --- | --- |
+| 条件付きCheckout発行・提示・検証 | `examples/checkout.rb`（下記） | Open→Agent Closed→Evidence、成功／拒否Receipt |
+| Direct／条件付きPayment | `examples/payment.rb` | Checkout結合とPayment Receipt、真正性と通知結果の違い |
+| 選択的Checkout＋Payment | `examples/selective_checkout.rb` | 保持する完全Openと送信する候補の差、必須条件は維持 |
+| 長期Open | `examples/long_payment_limits.rb`（追加image） | 12か月96,000円、別承認の3月は予算超過で拒否 |
 
-**公開済み1.6.0：** [Payment候補の選択的開示と保持／送信比較](docs/SELECTIVE_PAYMENT_CANDIDATE.md)。通常起動も公開1.6.0を使用します。旧`Payment`の完全内容profileと明示`SelectivePayment` profileを区別します。
-
-Full-content Payment (since1.1.0): [plain Ruby Direct/conditional example and boundaries](docs/PAYMENT_CANDIDATE.md). 通常起動も公開済み1.6.0を使用します。
-
-公開済み [ap2_mandate_verifier 1.6.0](https://rubygems.org/gems/ap2_mandate_verifier/versions/1.6.0) を通常起動で使うRailsデモです。InputBuilderの検証・診断・Evidence、販売者のCheckout JWT署名、複数商品・数量、真正なSuccess／Error Receiptを試せます。
-
-## 条件付き購入委任はRuby単体例から
-
-1.1.0は1.0.0のCheckout公開API・動作・profile・保存形式を維持し、Payment APIを追加した1.xリリースです。
-このデモは既存APIを使うため、依存version/checksum以外のソース移行は不要です。
-[1.x公開API・失敗契約](https://github.com/cuichangquan/ap2-mandate-verifier/blob/main/docs/PUBLIC_API.md)と
-[0.8.0からの移行](https://github.com/cuichangquan/ap2-mandate-verifier#upgrading-from-080)を参照してください。
-`ConditionalCheckout.issue_open/issue_closed/present` を使い、
-A／Bから1個＋Cを2個という条件の承認→Open発行→Agent Closed→完全検証→Receipt確認を
-Rubyだけで組み立てられます。[同梱の完全実行例](https://github.com/cuichangquan/ap2-mandate-verifier/blob/main/examples/conditional_checkout.rb)と
-[短いRelease例](https://github.com/cuichangquan/ap2-mandate-verifier/blob/main/docs/RELEASE_100.md)を主な導入経路にしてください。
-
-```sh
-gem install ap2_mandate_verifier --version 1.6.0
-ruby "$(ruby -e 'puts Gem::Specification.find_by_name("ap2_mandate_verifier", "1.6.0").full_gem_path')/examples/conditional_checkout.rb"
-```
-
-以下のRails画面は既存のOpen→Agent Closed検証・販売者署名／Receiptの合成シナリオです。
-条件承認・Open発行・Agent Closed生成のUIや、本人認証・Provider鍵管理を実装した画面ではありません。
+画面は既存のCheckout検証用です。Paymentや長期OpenはRuby単体例で体験します。
+本人認証・同意UI・Provider鍵管理・最新信頼情報・注文／Challenge・永続単発利用管理はアプリ側の責任です。
+SDKは実決済を実行せず、Receiptもアプリが通知した結果を認証するものです。
 
 ## Dockerで起動
 
-GitとDockerを用意してください。DB・Redis・ホストへのRuby導入、環境変数や候補Gemfileの指定は不要です。
+GitとDocker（Apple Silicon上のLinux ARM64）を用意してください。x86_64・他OSはこの固定imageでは未検証です。DB・Redis・ホストへのRuby導入、環境変数や候補Gemfileの指定は不要です。
 
 ```sh
 git clone https://github.com/cuichangquan/ap2-mandate-verifier-demo.git
@@ -61,6 +50,37 @@ http://127.0.0.1:3100/ で従来の4検証ケースを選びます。「販売�
 | Merchant署名・Error Receipt | 真正性true、購入成功通知false、拒否通知true |
 | Coffee2個＋Tea3個 | 明示的な複数明細profileで検証成功、Evidenceあり |
 | 2件目をTea2個へ減らす | 真正署名・金額一致でも constraint_mismatch、Evidenceなし |
+
+## RubyだけでCheckout → Payment（通常image）
+
+```sh
+docker run --rm --network none --cpus 1 --memory 512m --pids-limit 128 \
+  ap2-mandate-verifier-demo:local timeout 120 bundle exec ruby examples/checkout.rb
+docker run --rm --network none --cpus 1 --memory 512m --pids-limit 128 \
+  ap2-mandate-verifier-demo:local timeout 120 bundle exec ruby examples/payment.rb
+```
+
+Checkoutは`verified=true; rows=3; requirements=2`と両Receipt、Paymentは
+`Direct and conditional Payment: verified`と両Payment Receiptを表示します。
+真正なErrorでも`authentic=true`ですが、成功通知はfalseです。原文・秘密鍵は表示しません。
+
+## 12か月と累計予算超過（任意の追加image）
+
+```sh
+docker build --platform linux/arm64 -f Dockerfile.acceptance -t ap2-acceptance:local .
+docker run --rm --network none --cpus 1 --memory 512m --pids-limit 128 \
+  ap2-acceptance:local timeout 120 ruby examples/long_payment_limits.rb
+```
+
+固定SQLite driverだけを追加し、通常Gemfileは変更しません。12か月を合成時計で進めるため待機やschedulerは不要です。
+最初は同じOpen pairで毎月8,000円、12回・96,000円を100,000円以内で予約し、模擬開始と元Receipt復旧を確認します。
+続く別承認では1月40,000円→2月80,000円→3月拒否となります。
+3月の署名データは有効でも、合計120,000円が予算を超えるためTicketは出ず、予約は80,000円のままです。
+予約は決済完了ではなく、比較ケースはprocessorを開始しません。一時DBは終了時に削除します。
+
+長期OpenのUTC月次JPY profileは**AP2汎用MONTHLY仕様への完全準拠ではありません**。
+content最大400日でも提示証明は短命です。選択的開示・PISP／日時との合成、日次分割・catch-up・自動枠返却は対象外。
+[詳細・配布物の検証記録](docs/PUBLISHED_160.md)、[SDK契約](https://github.com/cuichangquan/ap2-mandate-verifier/blob/main/docs/LONG_PAYMENT.md)。
 
 ## 複数商品・数量
 

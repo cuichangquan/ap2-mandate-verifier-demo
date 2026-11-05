@@ -7,5 +7,5 @@ RUN bundle exec ruby test/installed_gem_check.rb && \
     gem install --local --no-document sqlite3-2.10.2-aarch64-linux-gnu.gem && \
     ruby -e 'gem "sqlite3", "= 2.10.2"; require "sqlite3"; abort unless SQLite3::VERSION == "2.10.2"' && \
     rm sqlite3-2.10.2-aarch64-linux-gnu.gem
-COPY examples/payment_acceptance.rb examples/long_payment.rb /demo/examples/
+COPY examples/payment_acceptance.rb examples/long_payment.rb examples/long_payment_limits.rb /demo/examples/
 CMD ["ruby", "examples/payment_acceptance.rb"]

@@ -5,3 +5,4 @@
 examples/**
 !examples/payment_acceptance.rb
 !examples/long_payment.rb
+!examples/long_payment_limits.rb
