@@ -1,0 +1,7 @@
+**
+!candidate/
+candidate/**
+!candidate/ap2_mandate_verifier-1.6.0.gem
+!examples/
+examples/**
+!examples/recurring_payment_candidate.rb
