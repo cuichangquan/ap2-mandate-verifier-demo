@@ -1,0 +1,9 @@
+**
+!candidate/
+candidate/**
+!candidate/long/
+candidate/long/**
+!candidate/long/ap2_mandate_verifier-1.6.0.gem
+!examples/
+examples/**
+!examples/long_payment_candidate.rb

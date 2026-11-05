@@ -1,5 +1,7 @@
 # AP2 購入委任・販売者署名のローカルデモ
 
+**長期Openの1.6.0候補（別経路）：** [同じOpenを12の明示UTC月期間で使うLong profile例](docs/LONG_PAYMENT_CANDIDATE.md)。既存の600秒／7,200秒profileと通常公開1.5.0経路は維持します。長期候補の最終archive確認・独立レビュー・公開判断は別です。
+
 **1.6.0候補：** [JPY・ON_DEMANDの回数／予算制約を試すローカル例](docs/RECURRING_PAYMENT_CANDIDATE.md)。通常経路は公開1.5.0を維持します。月次・非JPY・calendar resetは対象外です。
 
 **公開済み1.5.0：** [Payment受理・再送・結果不明からの復旧例と検証記録](docs/PUBLISHED_150.md)。通常Railsは公開Gemを使い、SQLite/mock例は任意のDocker追加経路で試せます。[旧候補経路](docs/PAYMENT_ACCEPTANCE_CANDIDATE.md)は履歴として保持します。
