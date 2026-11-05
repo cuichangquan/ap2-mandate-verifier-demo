@@ -1,0 +1,17 @@
+# Candidate-only synthetic recurring example; ordinary Rails remains 1.5.0.
+# The published acceptance base already provides pinned optional sqlite3=2.10.2.
+ARG DEMO_BASE=ap2-acceptance:local
+FROM ${DEMO_BASE}
+ARG CANDIDATE_SHA256
+ARG CANDIDATE_BYTES
+COPY candidate/ap2_mandate_verifier-1.6.0.gem /tmp/recurring-candidate.gem
+RUN case "$CANDIDATE_SHA256" in *[!0-9a-f]*|"") exit 1;; esac && \
+    test "${#CANDIDATE_SHA256}" -eq 64 && \
+    case "$CANDIDATE_BYTES" in *[!0-9]*|"") exit 1;; esac && \
+    test "$(wc -c < /tmp/recurring-candidate.gem)" -eq "$CANDIDATE_BYTES" && \
+    printf '%s  %s\n' "$CANDIDATE_SHA256" /tmp/recurring-candidate.gem | sha256sum --check && \
+    ruby -e 'gem "sqlite3", "= 2.10.2"; require "sqlite3"; abort unless SQLite3::VERSION == "2.10.2"' && \
+    gem install --local --no-document /tmp/recurring-candidate.gem && \
+    rm /tmp/recurring-candidate.gem
+COPY examples/recurring_payment_candidate.rb /demo/examples/recurring_payment_candidate.rb
+CMD ["ruby", "examples/recurring_payment_candidate.rb"]

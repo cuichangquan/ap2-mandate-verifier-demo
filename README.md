@@ -1,5 +1,7 @@
 # AP2 購入委任・販売者署名のローカルデモ
 
+**1.6.0候補：** [JPY・ON_DEMANDの回数／予算制約を試すローカル例](docs/RECURRING_PAYMENT_CANDIDATE.md)。通常経路は公開1.5.0を維持します。月次・非JPY・calendar resetは対象外です。
+
 **公開済み1.5.0：** [Payment受理・再送・結果不明からの復旧例と検証記録](docs/PUBLISHED_150.md)。通常Railsは公開Gemを使い、SQLite/mock例は任意のDocker追加経路で試せます。[旧候補経路](docs/PAYMENT_ACCEPTANCE_CANDIDATE.md)は履歴として保持します。
 
 **公開済み1.5.0：** [PISP・支払い実行日時を指定するRuby例と検証記録](docs/PUBLISHED_150.md)。通常RailsとRuby単体例は公開Gemを使用します。[旧候補専用経路](docs/PAYMENT_POLICY_CANDIDATE.md)は履歴として保持しています。
