@@ -8,8 +8,12 @@ Verification, reservation, authorization and settlement are separate.
 
 ## Build once
 
-Requirements: Git, Docker Desktop on Apple Silicon / Linux ARM64 containers.
-The fixed ARM64 base and SQLite artifact do not certify x86_64 or other OSes.
+Requirements: Git and Docker, with Linux ARM64 or AMD64 containers.
+The Dockerfiles select pinned Ruby and SQLite artifacts for each architecture.
+Apple Silicon runs ARM64 natively and AMD64 through emulation. See the
+[support and no-cache reproduction record](DOCKER_PORTABILITY_160.md) for exact
+observations, native CI status boundaries and both-architecture commands.
+This Rails demo pins MRI 4.0.9; the standalone SDK also supports MRI 3.4.12.
 No host Ruby, Rails, DB or Redis installation is needed. First downloads can take
 longer than the roughly ten-minute walkthrough.
 

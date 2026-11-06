@@ -26,7 +26,7 @@ SDKは実決済を実行せず、Receiptもアプリが通知した結果を認�
 
 ## Dockerで起動
 
-GitとDocker（Apple Silicon上のLinux ARM64）を用意してください。x86_64・他OSはこの固定imageでは未検証です。DB・Redis・ホストへのRuby導入、環境変数や候補Gemfileの指定は不要です。
+GitとDockerを用意してください。Linux ARM64／AMD64用の固定imageを選択できます。ローカルARM64はネイティブ、Apple Silicon上のAMD64はエミュレーションです。[対応環境・再構築手順](docs/DOCKER_PORTABILITY_160.md)を確認してください。DB・Redis・ホストへのRuby導入、環境変数や候補Gemfileの指定は不要です。
 
 ```sh
 git clone https://github.com/cuichangquan/ap2-mandate-verifier-demo.git
@@ -102,17 +102,17 @@ docker run --rm --network none --cpus 1 --memory 512m --pids-limit 128 \
   'timeout 120 bundle exec ruby test/demo_test.rb && timeout 60 bundle exec ruby test/merchant_scenario_test.rb && timeout 60 bundle exec ruby test/multi_item_scenario_test.rb'
 ```
 
-公開1.6.0のfresh build・今回の実測結果は[公開Gem検証記録](docs/PUBLISHED_160.md)へ記録します。過去の候補試験を今回のPASSとして数えません。
+両architectureのno-cache手順と実測範囲は[Docker検証記録](docs/DOCKER_PORTABILITY_160.md)、公開1.6.0の従来実測結果は[公開Gem検証記録](docs/PUBLISHED_160.md)へ記録します。過去の候補試験を今回のPASSとして数えません。
 
 ## 固定構成・責任境界
 
-MRI4.0.9、Bundler4.0.20、railties/actionpack8.0.4、Puma6.6.1、Minitest5.27.0。Docker baseは既存の公式arm64 digestに固定しています。Verifier1.6.0とJSON2.19.9／JWT3.3.0／base640.3.0／OpenSSL gem4.0.2／Digest3.2.1を使用します。
+MRI4.0.9、Bundler4.0.20、railties/actionpack8.0.4、Puma6.6.1、Minitest5.27.0。Docker baseはarchitecture別の公式Ruby digestに固定しています（既存ARM64 digestは維持）。Verifier1.6.0とJSON2.19.9／JWT3.3.0／base640.3.0／OpenSSL gem4.0.2／Digest3.2.1を使用します。
 
 Dockerfileは公式Gemの **186,368 bytes** とSHA256 `62de85123e1379c538c9c4302b71a9c55c590162591169a4e335aaa03a8991f8` を導入前に照合し、同じbytesをBundler cacheへ渡します。通常導入後も全68ファイルのarchive/installed一致、依存・Ruby要件、source外からのロードを検査します。Gemは再buildしません。正式リリースsourceは [`964e572`](https://github.com/cuichangquan/ap2-mandate-verifier/tree/964e572dc16d886561293cf90ddb9e2c927346bf)。レビュー済み候補source `98f7325a9dd0ee06739fe95e1306abe9b1c6ee5d` と同一tree `c9a9faaec045a9854fded3c1b4db375332a5fa57` です。取得／provider／依存の失敗時は停止し、lockやchecksumを緩めません。
 
 `ScenarioVerifier` は独立した業務情報と署名原文からprepare→保存→restore→現在状態→verifyを行います。保存したB／digestを現在値へ修復せず、利用者入力から鍵・期待注文を推測しません。
 
-[対応契約](https://github.com/cuichangquan/ap2-mandate-verifier/blob/main/docs/SUPPORT_CONTRACT.md)／[Merchant API・仕様とSDK差異](https://github.com/cuichangquan/ap2-mandate-verifier/blob/main/docs/MERCHANT_SIGNING.md)／[過去の候補・実測履歴](docs/HISTORY.md)。実Issuer・Host本番・原子的nonce消費・失効・性能・Web運用等のHOLDは維持します。他OS／architectureやデモのRuby3.4.12は未検証です。[MIT](LICENSE)、[出所通知](THIRD_PARTY_NOTICES.md)、[業務fixture通知](fixtures/input_builder/NOTICE.md)を保持します。実行ログ・依存archive・一時セッション鍵はコミットしません。
+[対応契約](https://github.com/cuichangquan/ap2-mandate-verifier/blob/main/docs/SUPPORT_CONTRACT.md)／[Merchant API・仕様とSDK差異](https://github.com/cuichangquan/ap2-mandate-verifier/blob/main/docs/MERCHANT_SIGNING.md)／[過去の候補・実測履歴](docs/HISTORY.md)。実Issuer・Host本番・原子的nonce消費・失効・性能・Web運用等のHOLDは維持します。RailsデモはMRI4.0.9固定です。SDK単体のMRI3.4.12／4.0.9対応と区別し、他OSやデモのRuby3.4.12は未検証です。[MIT](LICENSE)、[出所通知](THIRD_PARTY_NOTICES.md)、[業務fixture通知](fixtures/input_builder/NOTICE.md)を保持します。実行ログ・依存archive・一時セッション鍵はコミットしません。
 
 ## 開発source比較用の候補手順
 

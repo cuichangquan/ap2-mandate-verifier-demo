@@ -1,0 +1,65 @@
+name: Published demo Docker portability
+on:
+  pull_request:
+    paths:
+      - 'README.md'
+      - 'docs/QUICK_START.md'
+      - 'docs/DOCKER_PORTABILITY_160.md'
+      - 'Dockerfile'
+      - 'Dockerfile.acceptance*'
+      - '.dockerignore'
+      - 'Gemfile*'
+      - 'app/**'
+      - 'config/**'
+      - 'fixtures/**'
+      - 'examples/**'
+      - 'test/**'
+      - '.github/workflows/docker-portability.yml'
+permissions:
+  contents: read
+concurrency:
+  group: demo-docker-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+jobs:
+  published-demo:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: ubuntu-24.04
+            arch: amd64
+            machine: x86_64
+          - runner: ubuntu-24.04-arm
+            arch: arm64
+            machine: aarch64
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - name: Require native runner and build published Gem images without cache
+        env:
+          ARCH: ${{ matrix.arch }}
+          MACHINE: ${{ matrix.machine }}
+        run: |
+          test "$(uname -m)" = "$MACHINE"
+          docker info --format '{{.OSType}} {{.Architecture}} {{.ServerVersion}}'
+          test "$(docker info --format '{{.OSType}}')" = linux
+          case "$(docker info --format '{{.Architecture}}')" in
+            aarch64|arm64) test "$ARCH" = arm64 ;;
+            x86_64|amd64) test "$ARCH" = amd64 ;;
+            *) exit 1 ;;
+          esac
+          timeout 1200 docker build --no-cache --platform "linux/$ARCH" -t ap2-demo:verify .
+          timeout 300 docker build --no-cache --platform "linux/$ARCH" --build-arg DEMO_BASE=ap2-demo:verify -f Dockerfile.acceptance -t ap2-acceptance:verify .
+      - name: Offline bounded regressions and published wrappers
+        env:
+          MACHINE: ${{ matrix.machine }}
+        run: |
+          for image in ap2-demo:verify ap2-acceptance:verify; do
+            docker run --rm --network none --cpus 1 --memory 512m --pids-limit 128 -e EXPECTED_CPU="$MACHINE" "$image" \
+              timeout 30 ruby -rrbconfig -e 'abort unless `uname -m`.strip == ENV.fetch("EXPECTED_CPU") && RbConfig::CONFIG.fetch("host_cpu") == ENV.fetch("EXPECTED_CPU")'
+          done
+          docker run --rm --network none --cpus 1 --memory 512m --pids-limit 128 ap2-demo:verify timeout 900 sh test/docker_validation.sh normal
+          docker run --rm --network none --cpus 1 --memory 512m --pids-limit 128 ap2-acceptance:verify timeout 600 sh test/docker_validation.sh acceptance
