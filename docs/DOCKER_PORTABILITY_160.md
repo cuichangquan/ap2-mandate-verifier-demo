@@ -110,9 +110,8 @@ two occurrences passed. No dependency version or lock/hash bypass was needed.
 
 AMD64も両imageのno-cache再構築・11テスト221 assertions・全wrapperに合格。
 ただしApple Silicon上のエミュレーションです。ネイティブAMD64合格とは扱いません。
-Native CI remains pending in this local record; use exact-head PR checks rather
-than interpreting the workflow definition as evidence. Native CI results can be
-added separately without relabeling these local emulated observations.
+Native CI results are recorded separately below; the local AMD64 observations
+above remain emulated, not relabeled as native.
 
 Self-audit: shell syntax, workflow YAML and embedded shell parsing, relative
 document links, `git diff --check`, and ARM64 runtime CPU assertion passed.
@@ -122,3 +121,28 @@ The original ARM64-only inputs were diagnosed by inspection, not by intentionall
 running a known-mismatched image. Build downloads are not network-none; only tests
 and wrappers are. BuildKit operates inside the existing bounded Docker VM;
 test process limits must not be mistaken for per-build CPU/memory limits.
+
+
+## Native CI observations / ネイティブCI実測
+
+[Run 42313858613](https://github.com/cuichangquan/ap2-mandate-verifier-demo/actions/runs/42313858613)
+passed both jobs on 2026-11-06 UTC, testing commit
+`1f3e7d073e01cf1f9713c7a87e2deabb08e3ee55`.
+
+| Runner / 実行環境 | Mode / 実行方式 | Container / Ruby | Normal + acceptance no-cache build / checks |
+| --- | --- | --- | --- |
+| Ubuntu 24.04 ARM64, Docker 28.0.4 aarch64 | Native / ネイティブ | Debian 13, MRI 4.0.9, aarch64-linux | PASS; 11 tests / 221 assertions; all eight wrappers |
+| Ubuntu 24.04 AMD64, Docker 28.0.4 x86_64 | Native / ネイティブ | Debian 13, MRI 4.0.9, x86_64-linux | PASS; 11 tests / 221 assertions; all eight wrappers |
+
+Each job asserted host/server/container/Ruby CPU agreement and used no QEMU.
+Both checked the same published Gem hash/size and 68 installed/archive payloads,
+loaded the matching SQLite 2.10.2 platform, completed twelve mock starts /
+96,000 JPY, and rejected the budget-only third occurrence with no Ticket and
+unchanged 80,000 JPY / two reservations. No failures/errors/skips or checkout
+Node20 deprecation warning were observed in the logs. Checkout uses pinned Node24.
+
+両ネイティブ環境で通常・追加imageをno-cache構築し、同一公開Gemと回帰・主要例を確認。
+実Issuer・実決済・本番安全性や他OSへの適合を示すものではありません。
+This result identifies its tested commit, not later commits automatically.
+The [PR checks](https://github.com/cuichangquan/ap2-mandate-verifier-demo/pull/33/checks)
+and review comments are the source for latest-HEAD CI and independent review.

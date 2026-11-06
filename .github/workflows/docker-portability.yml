@@ -2,6 +2,9 @@ name: Published demo Docker portability
 on:
   pull_request:
     paths:
+      - 'README.md'
+      - 'docs/QUICK_START.md'
+      - 'docs/DOCKER_PORTABILITY_160.md'
       - 'Dockerfile'
       - 'Dockerfile.acceptance*'
       - '.dockerignore'
