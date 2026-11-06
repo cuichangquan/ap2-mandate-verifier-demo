@@ -1,11 +1,17 @@
 # Optional published-example image; normal Rails dependencies stay unchanged.
 ARG DEMO_BASE=ap2-mandate-verifier-demo:local
 FROM ${DEMO_BASE}
-RUN bundle exec ruby test/installed_gem_check.rb && \
-    gem fetch sqlite3 --version 2.10.2 --platform aarch64-linux-gnu && \
-    echo 'e9aea2c2b3476fc875dd8a89313a9a2862818519c0186bfb5b56d6f57bb08d98  sqlite3-2.10.2-aarch64-linux-gnu.gem' | sha256sum -c - && \
-    gem install --local --no-document sqlite3-2.10.2-aarch64-linux-gnu.gem && \
+ARG TARGETARCH
+RUN case "$TARGETARCH" in \
+      arm64) platform=aarch64-linux-gnu; sha=e9aea2c2b3476fc875dd8a89313a9a2862818519c0186bfb5b56d6f57bb08d98 ;; \
+      amd64) platform=x86_64-linux-gnu; sha=ca92731ab464df9cae503fa1a439a549e2724f6953c8c05a7769b59366e38f15 ;; \
+      *) echo "Unsupported target architecture: $TARGETARCH" >&2; exit 1 ;; \
+    esac && \
+    bundle exec ruby test/installed_gem_check.rb && \
+    gem fetch sqlite3 --version 2.10.2 --platform "$platform" && \
+    echo "$sha  sqlite3-2.10.2-$platform.gem" | sha256sum -c - && \
+    gem install --local --no-document "sqlite3-2.10.2-$platform.gem" && \
     ruby -e 'gem "sqlite3", "= 2.10.2"; require "sqlite3"; abort unless SQLite3::VERSION == "2.10.2"' && \
-    rm sqlite3-2.10.2-aarch64-linux-gnu.gem
+    rm "sqlite3-2.10.2-$platform.gem"
 COPY examples/payment_acceptance.rb examples/long_payment.rb examples/long_payment_limits.rb /demo/examples/
 CMD ["ruby", "examples/payment_acceptance.rb"]
