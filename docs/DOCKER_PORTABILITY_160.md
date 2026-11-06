@@ -89,7 +89,7 @@ a workflow definition alone is not a native PASS.
 Local host: macOS 26.6.2 (25G83), Apple Silicon arm64. Docker Desktop server
 29.9.2, Linux aarch64 VM, 8 CPUs / 8,215,117,824 bytes configured memory.
 Builds run serially; execution limits are 1 CPU / 512 MiB / 128 pids.
-Results are recorded below after completion. No native AMD64 local machine was used.
+No native AMD64 local machine was used.
 
 2026-11-06 UTC: native ARM64 no-cache normal and acceptance builds passed.
 Both report Debian GNU/Linux 13 (trixie), MRI 4.0.9 revision `3e93b23afc`,
@@ -101,5 +101,24 @@ The budget-only rejection retained 80,000 JPY / two reservations, no Ticket.
 
 ARM64は両imageのno-cache再構築・11テスト221 assertions・全wrapperに合格。
 12か月96,000円成功と予算超過拒否時80,000円／2件不変を確認しました。
-AMD64 local emulation and native CI are pending in this initial implementation
-record; do not treat them as PASS until the completion record/PR checks say so.
+AMD64 emulation also passed both no-cache builds, the same **11 tests / 221
+assertions** (no failures/errors/skips), all listed wrappers and all identity
+checks. Both AMD64 images report Debian 13, MRI 4.0.9 revision `3e93b23afc`,
+`x86_64-linux`; optional SQLite is 2.10.2 `x86_64-linux-gnu`. Twelve mock starts /
+96,000 JPY and the separate rejected third reservation / unchanged 80,000 JPY /
+two occurrences passed. No dependency version or lock/hash bypass was needed.
+
+AMD64も両imageのno-cache再構築・11テスト221 assertions・全wrapperに合格。
+ただしApple Silicon上のエミュレーションです。ネイティブAMD64合格とは扱いません。
+Native CI remains pending in this local record; use exact-head PR checks rather
+than interpreting the workflow definition as evidence. Native CI results can be
+added separately without relabeling these local emulated observations.
+
+Self-audit: shell syntax, workflow YAML and embedded shell parsing, relative
+document links, `git diff --check`, and ARM64 runtime CPU assertion passed.
+The validation helper and Dockerfiles were unchanged between these builds and
+the implementation commit; later edits only record results and tighten CI.
+The original ARM64-only inputs were diagnosed by inspection, not by intentionally
+running a known-mismatched image. Build downloads are not network-none; only tests
+and wrappers are. BuildKit operates inside the existing bounded Docker VM;
+test process limits must not be mistaken for per-build CPU/memory limits.
