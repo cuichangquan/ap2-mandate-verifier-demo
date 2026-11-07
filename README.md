@@ -6,6 +6,17 @@
 **すべて合成データで、本番決済は扱いません。検証成功と決済成功は別です。**
 SDK自体はRails非依存です。このリポジトリの画面だけがRailsを使います。
 
+## 別プロセスの購入Agent × 販売Agentデモ
+
+[購入デモの起動・設計・検証手順](docs/PURCHASE_DEMO.md)では、明示承認→AP2検証→永続受理→模擬決済→購入側Receipt確認を、独立したbuyer/sellerのHTTPS通信で試せます。公開Gem `ap2_mandate_verifier 1.6.0` / `a2a-rails 0.3.0`を使い、SDKの変更や実決済はありません。既存例とは別のCompose構成です。Apple SiliconのDockerで46 tests / 399 assertionsと実TLS・再起動復旧を確認済みです。実Chromeのdesktop/mobileで全八ケースも確認済みです。最終CI・レビューは継続中です。[検証範囲](docs/PURCHASE_VALIDATION.md)を確認してください。
+
+```sh
+export COMPOSE_PROJECT_NAME=ap2-purchase-demo
+docker compose -f compose.purchase.yml up --build
+```
+
+http://127.0.0.1:3100/ で正常系を選び、明示承認してから実行します。以降のrestart/downも同じプロジェクト名で行います。既存単体デモと同じ3100番を使うので同時起動しないでください。
+
 ## 初めての方へ：試す順序
 
 1. 下のDocker手順でimageを用意し、画面の正常・改ざん・期限切れ・入力不足を比較します。
