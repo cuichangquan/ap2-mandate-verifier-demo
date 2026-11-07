@@ -1,0 +1,18 @@
+# Published gems only; source candidates never enter this image.
+ARG TARGETARCH
+FROM ruby:4.0.9-trixie@sha256:42c18f0c9807ba1349c0253617d7f08ef98b815463b2f7785d97c4efdfd80f4d AS base-arm64
+FROM ruby:4.0.9-trixie@sha256:d1b33477de075536be34e1f50a15501c35151c380baba5e55a8c2b0b84ec9c7c AS base-amd64
+FROM base-${TARGETARCH}
+WORKDIR /app
+ENV BUNDLE_GEMFILE=/app/Gemfile.purchase BUNDLE_PATH=/usr/local/bundle RAILS_ENV=production RACK_ENV=production
+COPY Gemfile.purchase Gemfile.purchase.lock ./
+RUN gem fetch ap2_mandate_verifier --version 1.6.0 && \
+    gem fetch a2a-rails --version 0.3.0 && \
+    echo '62de85123e1379c538c9c4302b71a9c55c590162591169a4e335aaa03a8991f8  ap2_mandate_verifier-1.6.0.gem' | sha256sum -c - && \
+    echo '90a7d8d32bdd19ebc97046a3307c483cc0798b06afcd79df4931cfc5a4ead40f  a2a-rails-0.3.0.gem' | sha256sum -c - && \
+    mkdir -p vendor/cache && mv *.gem vendor/cache/ && \
+    BUNDLE_FROZEN=true bundle install --jobs 2 --retry 0
+COPY . .
+RUN groupadd -g 10001 purchase && useradd -u 10001 -g purchase -M purchase
+USER 10001:10001
+CMD ["bundle", "exec", "puma", "-b", "tcp://0.0.0.0:3100", "-t", "1:2", "config.purchase-authority.ru"]

@@ -6,6 +6,12 @@ on:
       - 'docs/QUICK_START.md'
       - 'docs/DOCKER_PORTABILITY_160.md'
       - 'Dockerfile'
+      - 'Dockerfile.purchase'
+      - 'compose.purchase.yml'
+      - 'config.purchase-*.ru'
+      - 'purchase_demo/**'
+      - 'docs/PURCHASE*'
+      - 'docs/images/purchase-architecture.svg'
       - 'Dockerfile.acceptance*'
       - '.dockerignore'
       - 'Gemfile*'
@@ -63,3 +69,17 @@ jobs:
           done
           docker run --rm --network none --cpus 1 --memory 512m --pids-limit 128 ap2-demo:verify timeout 900 sh test/docker_validation.sh normal
           docker run --rm --network none --cpus 1 --memory 512m --pids-limit 128 ap2-acceptance:verify timeout 600 sh test/docker_validation.sh acceptance
+      - name: Build and exercise isolated A2A AP2 purchase demo
+        env:
+          ARCH: ${{ matrix.arch }}
+          COMPOSE_PROJECT_NAME: purchase-ci-${{ github.run_id }}
+        run: |
+          timeout 900 docker build --no-cache --platform "linux/$ARCH" -f Dockerfile.purchase -t ap2-purchase-demo:local .
+          trap 'docker compose -f compose.purchase.yml down --volumes --remove-orphans' EXIT
+          docker compose -f compose.purchase.yml up -d --no-build
+          for attempt in $(seq 1 30); do
+            if curl --fail --silent --max-time 3 http://127.0.0.1:3100/ >/dev/null; then break; fi
+            sleep 1
+          done
+          curl --fail --silent --max-time 3 http://127.0.0.1:3100/ >/dev/null
+          timeout 300 sh test/purchase_docker_validation.sh

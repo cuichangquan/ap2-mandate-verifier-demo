@@ -1,0 +1,74 @@
+name: ap2-purchase-demo
+x-runtime: &runtime
+  image: ap2-purchase-demo:local
+  build:
+    context: .
+    dockerfile: Dockerfile.purchase
+  user: "10001:10001"
+  read_only: true
+  tmpfs:
+    - /tmp:rw,noexec,nosuid,size=32m,mode=1777
+  cap_drop: [ALL]
+  security_opt: [no-new-privileges:true]
+  pids_limit: 64
+  cpus: 0.75
+  mem_limit: 384m
+  restart: "no"
+  environment: &environment
+    PURCHASE_STATE_DIR: /state
+    PURCHASE_TRUST_DIR: /trust
+    RAILS_ENV: production
+    RACK_ENV: production
+    RAILS_MAX_THREADS: "2"
+    WEB_CONCURRENCY: "0"
+  depends_on:
+    init:
+      condition: service_completed_successfully
+services:
+  init:
+    <<: *runtime
+    user: "0:0"
+    depends_on: {}
+    network_mode: none
+    # Root is limited to volume initialization; runtime has no capabilities.
+    cap_add: [CHOWN, FOWNER, DAC_OVERRIDE]
+    command: [bundle, exec, ruby, purchase_demo/setup.rb]
+    volumes:
+      - authority-state:/state-authority
+      - buyer-state:/state-buyer
+      - seller-state:/state-seller
+      - public-trust:/trust
+  authority:
+    <<: *runtime
+    networks: [purchase, ui]
+    command: [bundle, exec, puma, -b, "tcp://0.0.0.0:3100", -t, "1:2", --quiet, config.purchase-authority.ru]
+    ports: ["127.0.0.1:3100:3100"]
+    volumes:
+      - authority-state:/state
+      - public-trust:/trust:ro
+  buyer:
+    <<: *runtime
+    networks: [purchase]
+    command: [bundle, exec, puma, -b, "ssl://0.0.0.0:3443?key=/state/tls.key&cert=/state/tls.crt", -t, "1:2", --quiet, config.purchase-buyer.ru]
+    volumes:
+      - buyer-state:/state
+      - public-trust:/trust:ro
+  seller:
+    <<: *runtime
+    networks: [purchase]
+    command: [bundle, exec, puma, -b, "ssl://0.0.0.0:3443?key=/state/tls.key&cert=/state/tls.crt", -t, "1:2", --quiet, config.purchase-seller.ru]
+    volumes:
+      - seller-state:/state
+      - public-trust:/trust:ro
+networks:
+  purchase:
+    internal: true
+  ui:
+    # Docker Desktop needs an edge network for loopback port publishing.
+    # Only authority joins it; buyer/seller remain internal-only.
+    driver: bridge
+volumes:
+  authority-state:
+  buyer-state:
+  seller-state:
+  public-trust:

@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Tea Purchase Lab · 購入委任デモ</title>
+  <style>
+    :root{color-scheme:light;--ink:#193b31;--muted:#607169;--line:#d6e0d7;--paper:#fffef9;--green:#205b43;--wash:#f0f4ec}*{box-sizing:border-box}body{margin:0;background:var(--wash);color:var(--ink);font-family:system-ui,-apple-system,"Noto Sans JP",sans-serif;font-size:15px;line-height:1.7}a{color:var(--green);text-underline-offset:3px}header,main,footer{max-width:1160px;margin:auto;padding:24px 32px}header{display:flex;justify-content:space-between;align-items:center;gap:15px;border-bottom:1px solid var(--line)}.brand{font-weight:800;letter-spacing:.06em}.brand span{font-weight:400;color:var(--muted);font-size:12px;margin-left:12px}.test{border:1px solid #cfb370;background:#fff5d8;color:#6f5316;border-radius:30px;padding:5px 13px;font-size:12px;font-weight:700}.eyebrow{font-size:12px;letter-spacing:.12em;font-weight:800;color:var(--green);margin:12px 0}h1{font-size:clamp(26px,4vw,40px);line-height:1.35;letter-spacing:-.03em;margin:10px 0 16px}h2{font-size:20px;margin:0 0 14px}h3{font-size:15px;margin:0 0 8px}p{margin:8px 0 16px}.intro{max-width:780px;color:var(--muted)}.grid{display:grid;grid-template-columns:1fr 1.3fr;gap:22px;margin:28px 0}.card{background:var(--paper);border:1px solid var(--line);border-radius:18px;padding:25px;box-shadow:0 5px 16px #193b3105}.section-label{font-size:11px;font-weight:800;color:var(--muted);letter-spacing:.12em;margin-bottom:12px}.tea{width:52px;height:52px;border-radius:50%;background:#e5eed9;display:flex;align-items:center;justify-content:center;color:#406637;font-size:24px;font-weight:700}.product{display:flex;align-items:center;gap:14px;margin:18px 0}.product strong{font-size:20px}.subtle{color:var(--muted);font-size:13px}.terms{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:20px 0}.term{background:#f1f5ed;padding:13px;border-radius:10px}.term small{display:block;color:var(--muted)}.term strong{font-size:24px}label.field{display:block;font-weight:650;font-size:13px;margin:20px 0 7px}select{width:100%;padding:11px;border:1px solid #9baea0;border-radius:8px;background:white;color:var(--ink);font:inherit;font-size:13px}.consent{display:flex;gap:10px;align-items:flex-start;margin:18px 0;font-size:13px}.consent input{width:18px;height:18px;flex:none;margin-top:3px;accent-color:var(--green)}button,.button{display:inline-block;background:var(--green);color:white;border:1px solid var(--green);border-radius:9px;padding:11px 17px;font:inherit;font-size:13px;font-weight:700;text-decoration:none;cursor:pointer}button:hover,.button:hover{background:#143e2c}button:focus-visible,a:focus-visible,select:focus-visible,input:focus-visible{outline:3px solid #b77c1f;outline-offset:3px}.wide{width:100%}.secondary{color:var(--green);background:transparent}.secondary:hover{background:#e5eedf}.notice{padding:12px 16px;border-radius:10px;background:#e0efdf;border:1px solid #a8c1a4;margin:12px 0}.alert{background:#fff0dc;border-color:#d6b37a;color:#6a4b1d}.stage{display:grid;grid-template-columns:30px 1fr;gap:12px;padding:16px 0;border-top:1px solid var(--line)}.number{width:26px;height:26px;display:flex;justify-content:center;align-items:center;background:#eaf0e5;border-radius:50%;font-size:12px;font-weight:800}.stage p{margin:2px 0;font-size:12px;color:var(--muted)}.status{display:inline-block;margin-top:5px;padding:3px 9px;border-radius:5px;background:#edf1e9;font-size:12px;font-weight:700;overflow-wrap:anywhere}.identifier{font-family:ui-monospace,monospace;font-size:12px;overflow-wrap:anywhere;padding:11px;background:#f0f3ed;border-radius:8px}.actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:18px}.actions form{margin:0}.execution{display:flex;justify-content:space-between;align-items:center;border-top:1px solid var(--line);padding-top:15px;margin-top:10px;font-size:13px}.execution strong{font-size:24px}.roles{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}.role{border-top:3px solid #7f9c71;padding:17px;background:#f8faf4;border-radius:4px}.role p{font-size:13px;color:var(--muted);margin:0}.role small{font-size:11px;font-weight:750;color:var(--green)}details{margin-top:22px}summary{cursor:pointer;font-weight:650;font-size:13px}details p,details li{font-size:13px;color:var(--muted)}.history{list-style:none;padding:0;margin:0}.history li{display:flex;gap:12px;justify-content:space-between;border-top:1px solid var(--line);padding:12px 0;font-size:12px;overflow-wrap:anywhere}footer{color:var(--muted);font-size:12px;padding-top:0}.empty{padding:40px 8px;text-align:center;color:var(--muted)}.empty strong{display:block;color:var(--ink);font-size:18px;margin-bottom:8px}@media(max-width:800px){.grid,.roles{grid-template-columns:1fr}header,main,footer{padding:20px}.brand span{display:none}.card{padding:20px}h1 br{display:none}.history li{display:block}}
+  </style>
+</head>
+<body>
+<header><a class="brand" href="/">TEA PURCHASE LAB<span>購入委任の検証環境</span></a><span class="test">TEST ONLY · 実課金なし</span></header>
+<main>
+  <p class="eyebrow">BUYER → AGENT → MERCHANT</p>
+  <h1>任せる条件は、あなたが決める。<br>実行の証拠は、一段ずつ確かめる。</h1>
+  <p class="intro">お茶の購入を題材に、承認から模擬決済・Receipt確認までを追うデモです。検証に成功しただけでは購入完了になりません。実店舗への注文やカードへの請求は一切行いません。</p>
+  <% if flash[:notice] %><div class="notice" role="status"><%= flash[:notice] %></div><% end %>
+  <% if flash[:alert] %><div class="notice alert" role="alert"><%= flash[:alert] %></div><% end %>
+  <div class="grid">
+    <section class="card" aria-labelledby="approval-title">
+      <div class="section-label">01 / BUYER APPROVAL</div><h2 id="approval-title">購入条件を確認・承認</h2>
+      <div class="product"><div class="tea" aria-hidden="true">茶</div><div><strong>お茶 / Tea</strong><div class="subtle">販売者：Tea Shop · 通貨：JPY</div></div></div>
+      <div class="terms"><div class="term"><small>承認する数量</small><strong>3</strong> 袋</div><div class="term"><small>支払上限</small><strong>3,000</strong> 円</div></div>
+      <p class="subtle">承認するのは商品・数量・上限金額です。Agentが後から受け取る販売者の提示は、この条件に照らして検証されます。</p>
+      <form action="/approve" method="post">
+        <input type="hidden" name="authenticity_token" value="<%= form_authenticity_token %>">
+        <input type="hidden" name="draft_id" value="<%= @draft_id %>">
+        <label class="field" for="scenario">試すシナリオ</label>
+        <select name="scenario" id="scenario"><% @scenarios.each do |value, label| %><option value="<%= value %>"><%= label %></option><% end %></select>
+        <label class="consent"><input type="checkbox" name="approved" value="1" required><span>Tea Shopでお茶3袋を、合計3,000円以内で購入する条件を確認し、この模擬購入を明示的に承認します。</span></label>
+        <button class="wide" type="submit">この条件で承認する</button>
+      </form>
+      <p class="subtle">承認だけでは実行しません。次の画面でAgentの実行を開始します。</p>
+    </section>
+    <section class="card" aria-labelledby="result-title">
+      <div class="section-label">02 / EXECUTION & EVIDENCE</div><h2 id="result-title">購入の現在地</h2>
+      <% if @purchase %>
+        <% approval = @purchase.fetch("approval", {}); offer = @purchase.fetch("offer", {}) %>
+        <div class="subtle">購入ID（再実行・復旧でも同じID）</div><div class="identifier"><%= @purchase["purchase_id"] %></div>
+        <p class="subtle">現在の承認：お茶3袋 / 上限3,000円（JPY）<br>シナリオ：<%= @scenarios.fetch(@purchase["scenario"], "確認中") %><br>販売者の提示：<%= offer["quantity"] || "未取得" %> 袋 / <%= offer["amount"] || "未取得" %> 円</p>
+        <% [["AP2検証", "ap2_status", "署名・購入条件・支払条件を検証します。"], ["アプリの実行判断", "app_status", "アプリ側で重複実行と状態を確認します。"], ["模擬決済の結果", "payment_status", "テスト用決済処理の結果です。実課金はありません。"], ["Receipt確認", "receipt_status", "署名と、この購入に結び付く結果かを確認します。"]].each_with_index do |(title, key, description), i| %>
+          <div class="stage"><span class="number"><%= i + 1 %></span><div><h3><%= title %></h3><p><%= description %></p><span class="status"><%= @purchase[key].presence || "未実施" %></span></div></div>
+        <% end %>
+        <% if @purchase["reason"].present? %><p class="notice"><%= @purchase["reason"] %></p><% end %>
+        <div class="execution"><span>模擬決済の実行回数</span><strong><%= @purchase["execution_count"] || 0 %><small> 回</small></strong></div>
+        <div class="actions">
+          <form action="/purchases/<%= @purchase["purchase_id"] %>/run" method="post"><input type="hidden" name="authenticity_token" value="<%= form_authenticity_token %>"><button type="submit">Agent実行 / 同じ購入を再実行</button></form>
+          <form action="/purchases/<%= @purchase["purchase_id"] %>/recover" method="post"><input type="hidden" name="authenticity_token" value="<%= form_authenticity_token %>"><button class="secondary" type="submit">保存済み結果で復旧</button></form>
+          <a class="button secondary" href="/purchases/<%= @purchase["purchase_id"] %>">状態を更新</a>
+        </div>
+        <p class="subtle">応答が途切れても、新しい購入を作らず同じIDで確認してください。Receipt未確認の状態を、購入完了として扱わないでください。</p>
+      <% else %>
+        <div class="empty"><strong>まだ購入を承認していません</strong>左の条件を確認して承認すると、<br>4つの段階と実行回数がここに表示されます。</div>
+        <% ["AP2検証", "アプリの実行判断", "模擬決済の結果", "Receipt確認"].each_with_index do |stage, i| %><div class="stage"><span class="number"><%= i + 1 %></span><div><h3><%= stage %></h3><span class="status">未実施</span></div></div><% end %>
+      <% end %>
+    </section>
+  </div>
+  <section class="card"><div class="section-label">03 / TRUST BOUNDARIES</div><h2>3つの役割、別々の責任</h2><div class="roles">
+    <div class="role"><small>BUYER AUTHORITY</small><h3>購入者の承認を保持</h3><p>購入条件と明示的な承認を記録し、委任を発行します。画面上の承認が出発点です。</p></div>
+    <div class="role"><small>BUYER AGENT</small><h3>条件内の購入を進める</h3><p>販売者の提示を受け取り、承認された範囲で購入データを組み立てます。</p></div>
+    <div class="role"><small>MERCHANT / HOST</small><h3>検証して実行を判断</h3><p>販売者側の注文と照合し、重複を防いで模擬決済を実行します。結果をReceiptで返します。</p></div>
+  </div><details><summary>技術的な境界と、このデモの制約</summary><p>AP2の暗号検証、アプリ側の実行制御、模擬決済、Receiptの検証は独立した段階です。Receipt確認まで含む状態を見て結果を判断します。ローカルのテスト環境であり、本番の本人認証・カード決済サービスではありません。</p><p>秘密鍵、nonce、署名付きデータの全文は画面やRailsログに表示しません。このブラウザで承認した購入だけを表示します。</p></details></section>
+  <% if @purchases.any? %><section class="card" style="margin-top:22px"><h2>このブラウザの購入履歴</h2><ul class="history"><% @purchases.each do |purchase| %><li><a href="/purchases/<%= purchase["purchase_id"] %>"><%= purchase["purchase_id"] %></a><span><%= @scenarios.fetch(purchase["scenario"], "購入") %> · 実行 <%= purchase["execution_count"] || 0 %> 回</span></li><% end %></ul></section><% end %>
+</main><footer>ローカル専用 / 合成データのみ / 実際の購入・送金・課金は発生しません</footer>
+</body></html>
