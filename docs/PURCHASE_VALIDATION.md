@@ -1,12 +1,17 @@
 # A2A + AP2 purchase demo validation ledger
 
-Status (2026-11-07): **LOCAL ARM64 VALIDATION PASS / FINAL CI, INDEPENDENT REVIEW AND MERGE PENDING**.
+Local evidence (2026-11-07): **ARM64 VALIDATION PASS**.
+
+This ledger records local observations. The associated pull request records the
+final commit, independent review, native ARM64/AMD64 CI checks and merge outcome.
+A local pass alone is not a merge-readiness claim.
 
 These results were observed on the working tree based on
 `1f90efa6342fa22f051a7da29c05382a4a2286b9`, including the final local UI/origin and
 TLS fixes. They are not CI evidence for a committed final HEAD. Record that HEAD
-and its CI/review results before declaring readiness to merge. No final image ID
-was captured; an earlier, superseded image is deliberately not cited.
+and its CI/review results in the pull request before declaring readiness to merge.
+The final bounded suite was also repeated successfully with the isolated
+`ap2-purchase-final` project.
 
 ## Environment and reproducibility
 
@@ -24,8 +29,8 @@ was captured; an earlier, superseded image is deliberately not cited.
   - ARM64: `42c18f0c9807ba1349c0253617d7f08ef98b815463b2f7785d97c4efdfd80f4d`.
   - AMD64: `d1b33477de075536be34e1f50a15501c35151c380baba5e55a8c2b0b84ec9c7c`.
 - The new purchase demo has **not** been locally validated on AMD64. Both
-  architecture jobs remain final CI obligations; an AMD64 Dockerfile target is
-  not itself a passing test.
+  native architecture checks are recorded in the pull request; an AMD64 Dockerfile
+  target is not itself a passing test.
 - No SDK source change, candidate Gem, new Gem release, public deployment,
   external payment account or real-money execution was required.
 
@@ -145,7 +150,8 @@ retained and verified. This was not fixed by disabling CSRF.
   automatic reauthorization.
 
 These findings and local passes do **not** constitute an independent final-HEAD
-no-findings sign-off. Final diff review, exact-commit CI and merge are pending.
+no-findings sign-off. Consult the associated pull request for final diff review,
+exact-commit CI and merge results.
 Keep required CI on zero-cost standard runners, within the existing maximum of
 three workflow runs per PR. CI is final validation, not a development retry loop.
 
@@ -158,6 +164,6 @@ three workflow runs per PR. CI is final validation, not a development retry loop
 4. Only then perform the explicitly authorized merge. No new Gem publication is
    needed because this work is application/demo integration only.
 
-PR: pending. Final CI: pending. Final independent review: pending. Merge: pending.
+The pull request is the final evidence record for these release gates.
 Do not include keys, Mandate/Receipt JWTs, challenge values, authorization tokens
 or full A2A bodies in evidence, screenshots or logs.

@@ -8,7 +8,7 @@
 
 ## 1. 起動と最初の購入
 
-**現段階は未検証の実装チェックポイントです。`Gemfile.purchase.lock`は実行環境での依存解決待ちで、まだ存在しません。以下の起動手順はlockfileを生成・固定し、検証を完了してから使用します。現状のままではimageをbuildできません。** 詳細は[検証台帳](PURCHASE_VALIDATION.md)を参照してください。
+**公開Gemの依存関係は`Gemfile.purchase.lock`に固定済みです。Apple SiliconのDockerでbuild・全シナリオ・実画面を確認しました。** ローカル検証の範囲は[検証台帳](PURCHASE_VALIDATION.md)、最終commitのCI・独立レビュー・統合結果は対応するPRのChecksとレビュー記録を参照してください。
 
 前提はGit、DockerとComposeです。MacへRubyやGemを直接インストールする必要はありません。リポジトリ直下で実行します。
 
@@ -31,7 +31,7 @@ docker compose -f compose.purchase.yml up --build
 
 ## 2. 八つのシナリオ
 
-以下は期待する結果です。八つのシナリオは別プロセス間の実TLS/A2A統合テストで確認済みです。ブラウザでも全八ケースを確認済みです。最終CI・レビューは継続中です。[検証記録](PURCHASE_VALIDATION.md)で範囲を区別しています。
+以下は期待する結果です。八つのシナリオは別プロセス間の実TLS/A2A統合テストで確認済みです。ブラウザでも全八ケースを確認済みです。最終commitのCI・レビュー結果は対応するPRに記録します。[検証記録](PURCHASE_VALIDATION.md)で範囲を区別しています。
 
 | 選択 | 注入する状況 | 観察する結果 |
 | --- | --- | --- |
@@ -152,7 +152,7 @@ TLS peerとhostnameを検証し、専用CAを使います。環境proxy・redire
 
 **2026-11-07のApple Silicon / Docker Desktop 29.9.2、native Linux ARM64で、新構成のbuildとテストを確認しました。** protocol / transport / setup / runtime / UI / live integrationの合計は**46 tests / 399 assertions、失敗なし**です。実TLSのCA・hostname拒否、認証tokenの役割分離、本番SSRF policyのprivate宛拒否、実A2Aの4並行呼び出しで実行回数1、実際の通信timeout後の元Receipt復旧、buyer/seller再起動後の実行回数1・元Receipt照合も確認しました。
 
-実Chromeのdesktopと390×844画面で全八ケースを確認済みです。正常系の明示承認・同ID再実行・更新・戻る、承認checkbox、別ホスト表記のセッションからの購入アクセス拒否も確認しました。timeoutはunknown→同ID再実行でもunknown→復旧Success、実行回数1を維持しました。`Referrer-Policy: no-referrer`で正規フォームが`Origin: null`となる問題を`same-origin`へ修正し、CSRF確認は維持しています。既存デモも最新checkoutからnormal/acceptance imageを再buildし、11 tests / 221 assertions、八つのwrapper、AP2 archive 68ファイル一致を確認しました。AMD64での新デモ、最終CI・独立レビュー・mergeはまだ完了扱いにしません。変更中のworking treeでのローカル証拠であり、最終commitへのCI結果ではありません。[環境・固定Gem hash・lockfile・実行範囲](PURCHASE_VALIDATION.md)を参照してください。
+実Chromeのdesktopと390×844画面で全八ケースを確認済みです。正常系の明示承認・同ID再実行・更新・戻る、承認checkbox、別ホスト表記のセッションからの購入アクセス拒否も確認しました。timeoutはunknown→同ID再実行でもunknown→復旧Success、実行回数1を維持しました。`Referrer-Policy: no-referrer`で正規フォームが`Origin: null`となる問題を`same-origin`へ修正し、CSRF確認は維持しています。既存デモも最新checkoutからnormal/acceptance imageを再buildし、11 tests / 221 assertions、八つのwrapper、AP2 archive 68ファイル一致を確認しました。この記録はARM64でのローカル証拠であり、AMD64や最終commitへのCI結果ではありません。対応するPRのChecks・レビュー・統合記録で最終状態を確認してください。[環境・固定Gem hash・lockfile・実行範囲](PURCHASE_VALIDATION.md)を参照してください。
 
 起動済みのデモ全体を確認する補助スクリプトは次です。合成購入を作成し、buyer/sellerを再起動します。volumeの削除は行いません。個別のlive TLS境界試験も併せて実行してください。
 
