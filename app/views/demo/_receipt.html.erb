@@ -1,0 +1,7 @@
+<p><strong><%= t(row[:outcome] == "Success" ? "demo.receipt.success" : "demo.receipt.error") %> (<code><%= row[:outcome] %></code>)</strong></p>
+<ul class="receipt-details">
+<li><%= t("demo.receipt.authentic") %>: <%= t("demo.boolean.#{row[:verified]}") %></li>
+<li><%= t("demo.receipt.purchase_succeeded") %>: <%= t("demo.boolean.#{row[:purchase_succeeded]}") %></li>
+<li><%= t("demo.receipt.purchase_rejected") %>: <%= t("demo.boolean.#{row[:purchase_rejected]}") %></li>
+<% if row.key?(:wrong_issuer_verified) %><li><%= t("demo.receipt.wrong_issuer") %>: <%= t("demo.boolean.#{row[:wrong_issuer_verified]}") %></li><% end %>
+</ul>

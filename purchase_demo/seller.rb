@@ -80,8 +80,8 @@ module PurchaseDemo
         return result(row, previous) if previous.processor_key
         inputs = verification(row, wires)
         checked = M::Payment.verify(**inputs)
-        return reject(row, "拒否", "AP2が署名・承認条件・注文の結合を拒否しました。") unless checked.verified?
-        return reject(row, "検証成功", "現在の承認・数量・予算・注文状態が実行条件を満たしません。") unless application_allows?(row)
+        return reject(row, "rejected", "ap2_rejected") unless checked.verified?
+        return reject(row, "verified", "application_rejected") unless application_allows?(row)
         ledger.authorize!(**scope(row), mode: :conditional, profile_ref: M::Payment::PROFILE_REF,
           checkout: row.fetch("order"), payment: Protocol.payment_details(checkout_jwt: row.fetch("checkout_jwt"), public_keys: keys),
           receipt_context: receipt_context(row))
@@ -90,7 +90,7 @@ module PurchaseDemo
         # Independently read current protected state and clock immediately before
         # the SDK CAS. No mutation/revocation endpoint exists in this local demo.
         fresh = record(id)
-        return reject(row, "検証成功", "承認の現在状態が変わったため開始しません。受理予約は保持します。", app_status: "実行拒否・受理予約保持") unless application_allows?(fresh)
+        return reject(row, "verified", "approval_changed", app_status: "reservation_held") unless application_allows?(fresh)
         execution = service.start(ticket: accepted.ticket, verification_inputs: verification(fresh, wires))
         return result(row, service.lookup(**scope(row))) unless execution
         receipt = Protocol.receipt(closed_sd_jwt: execution.closed_sd_jwt, payment_id: id,
@@ -106,7 +106,7 @@ module PurchaseDemo
         result(row, final)
       end
     rescue ArgumentError, KeyError, M::PaymentAcceptance::Conflict
-      reject(row, "拒否", "署名・原文・注文との結合が一致しません。")
+      reject(row, "rejected", "binding_mismatch")
     end
 
     def status(id)
@@ -124,9 +124,9 @@ module PurchaseDemo
         result(row, old)
       end
     end
-    def reject(row, ap2, reason, app_status: "拒否・未受理")
+    def reject(row, ap2, reason, app_status: "not_accepted")
       rejected = summary(row).merge("ap2_status" => ap2, "app_status" => app_status,
-        "payment_status" => "未開始", "execution_count" => 0, "reason" => reason)
+        "payment_status" => "not_started", "execution_count" => 0, "reason" => reason)
       @store.update(row.fetch("id")) { |r| r.merge("summary" => rejected) }
       {"summary" => rejected}
     end
@@ -139,11 +139,11 @@ module PurchaseDemo
       finished = %w[receipt_success receipt_error].include?(state)
       started = accepted.processor_key || processor
       uncertain = %w[unavailable conflict].include?(state)
-      output = {"summary" => summary(row).merge("ap2_status" => started ? "検証成功" : (uncertain ? "状態不明" : "未実行"),
-        "app_status" => started ? "永続受理済み・再実行不可" : (uncertain ? "状態照会が必要・再実行禁止" : "承認済み・未受理"),
-        "payment_status" => finished ? (state == "receipt_success" ? "模擬成功" : "模擬失敗") : (started || uncertain ? "応答不明・照会待ち" : "未開始"),
+      output = {"summary" => summary(row).merge("ap2_status" => started ? "verified" : (uncertain ? "unknown" : "not_run"),
+        "app_status" => started ? "accepted_no_retry" : (uncertain ? "lookup_required" : "approved_pending"),
+        "payment_status" => finished ? (state == "receipt_success" ? "mock_success" : "mock_error") : (started || uncertain ? "response_unknown" : "not_started"),
         "execution_count" => processor ? processor.fetch("execution_count") : 0,
-        "reason" => finished ? "保存された模擬決済結果を返しました。購入側のReceipt確認が必要です。" : "同じ購入IDの状態を保持しています。新しい支払い許可は発行しません。"),
+        "reason" => finished ? "result_saved" : "purchase_retained"),
         "acceptance_state" => state}
       if accepted.receipt_jwt
         receipt = accepted.receipt_jwt

@@ -34,8 +34,8 @@ class MultiItemScenarioTest < Minitest::Test
     assert_equal 200, response.status
     assert_equal "no-store", response.headers["cache-control"]
     %w[multi-item-scenario scoped_research_verified constraint_mismatch Success Error].each { |text| assert_includes response.body, text }
-    assert_includes response.body, "購入成功通知 false"
-    assert_includes response.body, "公開済みGem"
+    assert_includes response.body, "Purchase success reported: No"
+    assert_includes response.body, "published gem"
     refute_includes response.body, "公開前候補"
   end
 end

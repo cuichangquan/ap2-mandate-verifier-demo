@@ -4,6 +4,7 @@ require "openssl"
 require_relative "protocol"
 require_relative "store"
 require_relative "transport"
+require_relative "summary_codes"
 
 module PurchaseDemo
   SCENARIOS = %w[valid budget quantity tampered error timeout wrong_receipt invalid_receipt].freeze
@@ -24,10 +25,10 @@ module PurchaseDemo
       base = {"purchase_id" => record.fetch("id"), "scenario" => record.fetch("scenario"),
         "approval" => {"item" => "お茶", "quantity" => 3, "currency" => "JPY", "max_amount" => 3000},
         "offer" => {"quantity" => 0, "amount" => 0, "currency" => "JPY"},
-        "ap2_status" => "未実行", "app_status" => "明示承認済み", "payment_status" => "未開始",
-        "receipt_status" => "未確認", "execution_count" => 0, "reason" => "承認を保存しました。購入Agentを実行してください。"}
+        "ap2_status" => "not_run", "app_status" => "approved", "payment_status" => "not_started",
+        "receipt_status" => "unverified", "execution_count" => 0, "reason" => "approval_saved"}
       summary = record.fetch("summary", {})
-      base.merge(summary.slice("offer", "ap2_status", "app_status", "payment_status", "receipt_status", "execution_count", "reason"))
+      base.merge(SummaryCodes.normalize(summary.slice("offer", "ap2_status", "app_status", "payment_status", "receipt_status", "execution_count", "reason")))
     end
   end
 

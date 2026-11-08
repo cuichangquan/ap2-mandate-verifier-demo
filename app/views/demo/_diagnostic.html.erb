@@ -1,0 +1,4 @@
+<dl class="diagnostic"><dt><%= t("demo.diagnostic.failed_check") %></dt><dd><code><%= diagnostic[:stage] %></code></dd>
+<dt><%= t("demo.diagnostic.field") %></dt><dd><% if diagnostic[:field] %><code><%= diagnostic[:field] %></code><% else %><%= t("demo.diagnostic.unidentified") %><% end %></dd>
+<dt><%= t("demo.diagnostic.reason") %></dt><dd><code><%= diagnostic[:reason] %></code></dd>
+<dt><%= t("demo.diagnostic.hint") %></dt><dd class="diagnostic-hint"><%= diagnostic[:hint] %></dd></dl>

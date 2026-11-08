@@ -4,8 +4,8 @@ require "base64"
 
 # Published 0.6.0 workflow: independent synthetic business data, never token trust.
 class ScenarioVerifier
-  LABELS = {"valid" => "正常な購入内容", "tampered" => "購入内容を改ざん", "expired" => "有効期限切れ", "missing_currency" => "注文の通貨を渡し忘れる"}.freeze
-  Outcome = Data.define(:title, :reason, :status, :code, :evidence_present, :time, :diagnostic)
+  SCENARIOS = %w[valid tampered expired missing_currency].freeze
+  Outcome = Data.define(:title_key, :reason_key, :status, :code, :evidence_present, :time, :diagnostics)
   DIRECTORY = File.expand_path("../../fixtures/input_builder", __dir__)
 
   def self.read(name)
@@ -22,7 +22,7 @@ class ScenarioVerifier
   end
 
   def self.call(scenario)
-    raise ArgumentError, "unknown scenario" unless LABELS.key?(scenario)
+    raise ArgumentError, "unknown scenario" unless SCENARIOS.include?(scenario)
     builder = AP2MandateVerifier::InputBuilder
     wires = read("signed_wires")
     issued = builder.prepare(trust: trust(1_800_000_000), order: read("order"),
@@ -47,20 +47,23 @@ class ScenarioVerifier
       order: current_order, **wires.transform_keys(&:to_sym),
       expected_challenge_issuer_id: "synthetic-host",
       clock_source_id: "fixed-synthetic-clock", verified_at: now)
-    title = result.success? ? "検証成功" : (result.rejected? ? "拒否" : "検証不能")
-    reason = case result.code
-    when :scoped_research_verified then "業務情報から組み立てた入力が固定profileの検査を通過しました。"
-    when :host_binding_mismatch then "購入内容と保存済みHost情報が一致しません。"
-    when :invalid_purchase_time, :invalid_host_validity, :challenge_time_mismatch
-      "合成デモ時刻が有効期間の条件を満たしません。"
+    # Only stable keys and verification facts leave the service. Translations
+    # never participate in authorization or mutate the original signed data.
+    title_key = result.success? ? "verified" : (result.rejected? ? "rejected" : "unavailable")
+    reason_key = case result.code
+    when :scoped_research_verified then "verified"
+    when :host_binding_mismatch then "binding_mismatch"
+    when :invalid_purchase_time, :invalid_host_validity, :challenge_time_mismatch then "invalid_time"
     else
-      result.rejected? ? "固定profileの検査条件を満たしません。" : "検証を完了できません。購入処理は行いません。"
+      result.rejected? ? "rejected" : "unavailable"
     end
-    diagnostic = result.diagnostic&.to_h(locale: :ja)
-    Outcome.new(title:, reason:, status: result.status, code: result.code,
-      evidence_present: !result.evidence.nil?, time: now, diagnostic: diagnostic)
+    diagnostics = if result.diagnostic
+      %i[en ja].to_h { |locale| [locale, result.diagnostic.to_h(locale: locale)] }
+    end
+    Outcome.new(title_key:, reason_key:, status: result.status, code: result.code,
+      evidence_present: !result.evidence.nil?, time: now, diagnostics:)
   rescue StandardError, LoadError
-    Outcome.new(title: "検証不能", reason: "検証を完了できません。購入処理は行いません。",
-      status: :unavailable, code: :demo_verification_unavailable, evidence_present: false, time: nil, diagnostic: nil)
+    Outcome.new(title_key: "unavailable", reason_key: "unavailable",
+      status: :unavailable, code: :demo_verification_unavailable, evidence_present: false, time: nil, diagnostics: nil)
   end
 end

@@ -1,68 +1,101 @@
-# AP2 Ruby SDK 1.6.0 — local learning demo
+[English](README.md) | [日本語](README.ja.md)
 
-[English walkthrough](docs/QUICK_START.md) · [SDK日本語README](https://github.com/cuichangquan/ap2-mandate-verifier/blob/main/README.ja.md)
+# AP2 Ruby SDK 1.6.0: local learning demo
 
-公開Gem **ap2_mandate_verifier 1.6.0**を使い、Checkout・Payment・Receiptの関係を試すローカルデモです。
-**すべて合成データで、本番決済は扱いません。検証成功と決済成功は別です。**
-SDK自体はRails非依存です。このリポジトリの画面だけがRailsを使います。
+Try signed purchase approvals, Checkout and Payment Mandates, and Receipts with the published **ap2_mandate_verifier 1.6.0** gem. The browser demos and Ruby examples show what an agent may purchase, how a merchant verifies that permission, and how the buyer checks the reported result.
 
-## 別プロセスの購入Agent × 販売Agentデモ
+**All data, keys and payment effects are synthetic. No real money moves. Successful verification is not a successful payment.** The SDK is framework-independent; only this repository's browser interfaces use Rails.
 
-[購入デモの起動・設計・検証手順](docs/PURCHASE_DEMO.md)では、明示承認→AP2検証→永続受理→模擬決済→購入側Receipt確認を、独立したbuyer/sellerのHTTPS通信で試せます。公開Gem `ap2_mandate_verifier 1.6.0` / `a2a-rails 0.3.0`を使い、SDKの変更や実決済はありません。既存例とは別のCompose構成です。Apple SiliconのDockerで46 tests / 399 assertionsと実TLS・再起動復旧を確認済みです。実Chromeのdesktop/mobileで全八ケースも確認済みです。最終commitのCI・レビュー・統合結果は対応するPRを参照してください。[検証範囲](docs/PURCHASE_VALIDATION.md)を確認してください。
+AP2 supplies the signed purchase and payment documents used here. A2A carries messages between agents in the separate purchase demo. You do not need prior experience with either protocol, an external LLM, a payment account or an issuer account.
+
+## Choose a starting point
+
+| Demo | What to try | What to observe |
+| --- | --- | --- |
+| Standard browser demo, port **3000** | Valid, tampered, expired and missing-currency inputs; merchant signatures; multiple products and quantities | Verification status, diagnostic codes, Evidence and authentic Success/Error Receipts |
+| A2A × AP2 purchase demo, port **3100** | Explicit approval, agent execution, eight scenarios, status refresh, recovery and history | Four separate stages: AP2 verification, application execution decision, simulated payment and buyer-side Receipt verification |
+| Offline Ruby examples | Checkout → Payment, selective disclosure, execution policies, durable acceptance and long-lived Open Mandates | Public SDK APIs and the application responsibilities around them |
+
+Both browser demos start in **English**. Use **English / 日本語** at the top of each screen. The language stays selected through navigation, form submissions, redirects and reloads. Unsupported language values fall back to English. Switching language does not rerun a purchase or change its ID, approval, quantity, amount or currency.
+
+For a shorter guided tour, see [Quick Start](docs/QUICK_START.md). The commands below are run from this repository's root.
+
+## Prerequisites and Docker startup
+
+Install Git and Docker with Compose support. The Dockerfiles support Linux ARM64 and AMD64 containers and select pinned artifacts for each architecture. Apple Silicon runs ARM64 natively; AMD64 there is emulated. The build needs network access to fetch official images and locked gems. You do **not** need Ruby, Rails, a database or Redis on your host.
+
+```sh
+git clone https://github.com/cuichangquan/ap2-mandate-verifier-demo.git
+cd ap2-mandate-verifier-demo
+# Use amd64 instead on an x86_64 host.
+export DEMO_ARCH=arm64
+docker build --platform "linux/$DEMO_ARCH" -t ap2-mandate-verifier-demo:local .
+docker run --rm --name ap2-mandate-verifier-demo \
+  --cpus 1 --memory 512m --pids-limit 128 -p 127.0.0.1:3000:3000 \
+  ap2-mandate-verifier-demo:local \
+  timeout 3600 bundle exec puma -b tcp://0.0.0.0:3000 -t 1:1 config.ru
+```
+
+Open **http://127.0.0.1:3000/**. The web process stops after one hour. To stop it sooner, run `docker stop ap2-mandate-verifier-demo` in another terminal. The container is removed automatically; the built image remains. Do not expose these demos to the internet or prune shared Docker caches.
+
+The standard demo uses host port 3000 and the purchase demo uses 3100, so they can run together. [Docker platform details and reproduction record (English/Japanese)](docs/DOCKER_PORTABILITY_160.md) distinguish native runs from emulation and historical results from current-commit CI.
+
+## Explore the standard browser demo
+
+1. At `/`, choose a scenario and run verification. Compare the status, machine-readable code, diagnostics and whether Evidence exists.
+2. Open `/merchant` from the navigation. Compare merchant signatures and the authentic Success and Error Receipts.
+3. Open `/multi-item`. Compare Coffee × 2 plus Tea × 3 with the short order containing only Tea × 2.
+4. Switch to Japanese and back. The selected scenario and its result should remain the same. Results are display snapshots held in process-local memory for 30 minutes. Language links never regenerate an expired or missing result. Direct merchant/multi-item visits after session loss and explicit rerun URLs can create fresh synthetic results; see the [snapshot behavior](docs/LOCALIZATION.md#standard-demo-result-snapshots). Amounts retain their explicit currency, including USD in the standard fixtures and JPY in the purchase demo.
+
+| Case | Expected result |
+| --- | --- |
+| Valid | `verified_research` / `scoped_research_verified`; Evidence present |
+| Tampered purchase | `rejected` / `host_binding_mismatch`; no Evidence |
+| Expired | `rejected` / `invalid_purchase_time`; no Evidence |
+| Missing currency | `rejected` / `invalid_host_context`; `order.currency` diagnostic; no Evidence |
+| Merchant signature + Success Receipt | Authenticity `true`; reported purchase success `true` |
+| Merchant signature + Error Receipt | Authenticity `true`; reported purchase success `false`; reported rejection `true` |
+| Coffee × 2 + Tea × 3 | Multi-item profile verifies; Evidence present |
+| Second item reduced to Tea × 2 | `constraint_mismatch`, despite a valid signature and matching amount; no Evidence |
+
+**Evidence and Receipt authenticity are not permission to execute a purchase or payment.** A Receipt authenticates an application's reported outcome. An authentic Error is still a failure; a valid signature alone does not establish settlement. These standard screens do not execute payments, update real orders or consume production nonces.
+
+![English standard demo showing a successful verification and its limited meaning](docs/images/standard-en.jpg)
+
+*Standard demo in English: verification facts, not payment execution.*
+
+## Run the A2A × AP2 purchase demo
+
+This separate Compose stack uses published `ap2_mandate_verifier 1.6.0` and `a2a-rails 0.3.0` without modifying either gem. Authority, buyer and seller run in separate processes; agent communication uses real local HTTPS.
 
 ```sh
 export COMPOSE_PROJECT_NAME=ap2-purchase-demo
 docker compose -f compose.purchase.yml up --build
 ```
 
-http://127.0.0.1:3100/ で正常系を選び、明示承認してから実行します。以降のrestart/downも同じプロジェクト名で行います。既存単体デモと同じ3100番を使うので同時起動しないでください。
+1. Open **http://127.0.0.1:3100/** and select the valid scenario.
+2. Review Tea × 3, a total limit of **3,000 JPY**, Tea Shop and the simulated payment terms. Check the explicit-approval checkbox and save the approval. Approval alone does not execute a purchase.
+3. Run the agent for that purchase ID. The normal offer is **3 × 800 JPY = 2,400 JPY**.
+4. Read all four stages and the execution count. Success requires the buyer to verify the matching Success Receipt, not just AP2 verification.
+5. Re-run the **same purchase ID** and confirm that the simulated processor count remains **1**. Try `timeout`, refresh status and recover using the saved result without creating another purchase.
 
-## 初めての方へ：試す順序
-
-1. 下のDocker手順でimageを用意し、画面の正常・改ざん・期限切れ・入力不足を比較します。
-2. `/merchant`で真正なSuccess／Error Receipt、`/multi-item`で数量不足の拒否を比較します。
-3. 同じimageでRubyのCheckout発行→提示→検証、Payment→Receiptを実行します。
-4. 任意のSQLite追加imageで、12か月の長期Openと累計予算超過を比較します。
-
-| 体験 | 実行方法 | 見るポイント |
-| --- | --- | --- |
-| 条件付きCheckout発行・提示・検証 | `examples/checkout.rb`（下記） | Open→Agent Closed→Evidence、成功／拒否Receipt |
-| Direct／条件付きPayment | `examples/payment.rb` | Checkout結合とPayment Receipt、真正性と通知結果の違い |
-| 選択的Checkout＋Payment | `examples/selective_checkout.rb` | 保持する完全Openと送信する候補の差、必須条件は維持 |
-| 長期Open | `examples/long_payment_limits.rb`（追加image） | 12か月96,000円、別承認の3月は予算超過で拒否 |
-
-画面は既存のCheckout検証用です。Paymentや長期OpenはRuby単体例で体験します。
-本人認証・同意UI・Provider鍵管理・最新信頼情報・注文／Challenge・永続単発利用管理はアプリ側の責任です。
-SDKは実決済を実行せず、Receiptもアプリが通知した結果を認証するものです。
-
-## Dockerで起動
-
-GitとDockerを用意してください。Linux ARM64／AMD64用の固定imageを選択できます。ローカルARM64はネイティブ、Apple Silicon上のAMD64はエミュレーションです。[対応環境・再構築手順](docs/DOCKER_PORTABILITY_160.md)を確認してください。DB・Redis・ホストへのRuby導入、環境変数や候補Gemfileの指定は不要です。
+The [complete purchase guide](docs/PURCHASE_DEMO.md) covers all eight scenarios, errors and unknown outcomes, restart/recovery, purchase history, trust boundaries and tests. The purchase UI retains history only for approvals owned by the current browser session. Keep using the same hostname and browser session.
 
 ```sh
-git clone https://github.com/cuichangquan/ap2-mandate-verifier-demo.git
-cd ap2-mandate-verifier-demo
-docker build --platform linux/arm64 -t ap2-mandate-verifier-demo:local .
-docker run --rm --name ap2-mandate-verifier-demo \
-  --cpus 1 --memory 512m --pids-limit 128 -p 127.0.0.1:3100:3000 \
-  ap2-mandate-verifier-demo:local \
-  timeout 3600 bundle exec puma -b tcp://0.0.0.0:3000 -t 1:1 config.ru
+# Run in a terminal with the same COMPOSE_PROJECT_NAME.
+docker compose -f compose.purchase.yml restart buyer seller
+docker compose -f compose.purchase.yml down
 ```
 
-http://127.0.0.1:3100/ で従来の4検証ケースを選びます。「販売者署名と成功・拒否Receipt」と「複数商品・数量」のリンクから、各APIの結果を比較できます。画面の1.6.0・status/code・診断・Evidence・Receiptの真正性と業務結果を確認してください。終了は `docker stop ap2-mandate-verifier-demo`。Web公開や共有cacheのpruneは行いません。
+Ordinary `down` preserves the named volumes and purchase data. Do not delete volumes to recover a pending purchase. Full-reset consequences are explained in the purchase guide.
 
-| ケース | 結果 |
-| --- | --- |
-| 正常 | verified_research / scoped_research_verified、Evidenceあり |
-| 購入内容を改ざん | rejected / host_binding_mismatch、Evidenceなし |
-| 期限切れ | rejected / invalid_purchase_time、Evidenceなし |
-| 通貨を渡し忘れる | rejected / invalid_host_context、order.currency診断、Evidenceなし |
-| Merchant署名・Success Receipt | 真正性true、購入成功通知true |
-| Merchant署名・Error Receipt | 真正性true、購入成功通知false、拒否通知true |
-| Coffee2個＋Tea3個 | 明示的な複数明細profileで検証成功、Evidenceあり |
-| 2件目をTea2個へ減らす | 真正署名・金額一致でも constraint_mismatch、Evidenceなし |
+![English purchase demo showing the four stages, verified Success Receipt and one mock execution](docs/images/purchase-en.jpg)
 
-## RubyだけでCheckout → Payment（通常image）
+*Purchase demo in English: approval, four result stages and browser-owned history. [Compare both languages and mobile layouts](docs/LOCALIZATION_VALIDATION.md#screen-comparison--画面比較).*
+
+## Run the offline Ruby examples
+
+Once the standard image is built, run Checkout followed by Payment:
 
 ```sh
 docker run --rm --network none --cpus 1 --memory 512m --pids-limit 128 \
@@ -71,127 +104,65 @@ docker run --rm --network none --cpus 1 --memory 512m --pids-limit 128 \
   ap2-mandate-verifier-demo:local timeout 120 bundle exec ruby examples/payment.rb
 ```
 
-Checkoutは`verified=true; rows=3; requirements=2`と両Receipt、Paymentは
-`Direct and conditional Payment: verified`と両Payment Receiptを表示します。
-真正なErrorでも`authentic=true`ですが、成功通知はfalseです。原文・秘密鍵は表示しません。
+Checkout issues Open, lets an Agent close and present it, and verifies against independent Host inputs. Expect `verified=true; rows=3; requirements=2`. Payment demonstrates Direct and conditional Mandates bound to Checkout and prints `Direct and conditional Payment: verified`. Both demonstrate authentic Success/Error Receipts without printing private keys or complete signed documents.
 
-## 12か月と累計予算超過（任意の追加image）
+Use the same command with any of these files:
+
+| File | Coverage and limits |
+| --- | --- |
+| `examples/selective_payment.rb` | Five retained versus three transmitted disclosures; selected Payment and both Receipt outcomes. Unselected values, salts and full wire data are not printed. Candidate count, order and issuer-JWT linkability are not hidden. |
+| `examples/selective_checkout.rb` | Selected merchant/product candidates followed by Payment; all requirements and quantities remain. Merchant and product choices are independent allowlists, not correlated conditions. |
+| `examples/payment_policy.rb` | Direct, conditional and selective Payment with an explicit PISP/execution-date profile. Signed values are checked against independently trusted application plans and inclusive UTC boundaries. No QWAC authentication, scheduling or settlement is performed. |
+
+### Durable acceptance and a twelve-month Open
+
+An optional image adds pinned SQLite 2.10.2 without changing the standard Gemfile or lockfile. Use the same `DEMO_ARCH` selected for the standard image.
 
 ```sh
-docker build --platform linux/arm64 -f Dockerfile.acceptance -t ap2-acceptance:local .
+docker build --platform "linux/$DEMO_ARCH" -f Dockerfile.acceptance -t ap2-acceptance:local .
+docker run --rm --network none --cpus 1 --memory 512m --pids-limit 128 \
+  ap2-acceptance:local timeout 120 ruby examples/payment_acceptance.rb
 docker run --rm --network none --cpus 1 --memory 512m --pids-limit 128 \
   ap2-acceptance:local timeout 120 ruby examples/long_payment_limits.rb
 ```
 
-固定SQLite driverだけを追加し、通常Gemfileは変更しません。12か月を合成時計で進めるため待機やschedulerは不要です。
-最初は同じOpen pairで毎月8,000円、12回・96,000円を100,000円以内で予約し、模擬開始と元Receipt復旧を確認します。
-続く別承認では1月40,000円→2月80,000円→3月拒否となります。
-3月の署名データは有効でも、合計120,000円が予算を超えるためTicketは出ず、予約は80,000円のままです。
-予約は決済完了ではなく、比較ケースはprocessorを開始しません。一時DBは終了時に削除します。
+The acceptance example compares reservation, replay, atomic start, one simulated dispatch, an unknown result, reopening the same database and recovery of the original Receipt. Production requires a protected durable database shared by all workers, independently approved occurrences, processor idempotency and reconciliation. A timeout, a new UUID or recreating the database does not grant new permission.
 
-長期OpenのUTC月次JPY profileは**AP2汎用MONTHLY仕様への完全準拠ではありません**。
-content最大400日でも提示証明は短命です。選択的開示・PISP／日時との合成、日次分割・catch-up・自動枠返却は対象外。
-[詳細・配布物の検証記録](docs/PUBLISHED_160.md)、[SDK契約](https://github.com/cuichangquan/ap2-mandate-verifier/blob/main/docs/LONG_PAYMENT.md)。
+The long-Open example advances a synthetic clock through twelve UTC months: **8,000 JPY/month, 96,000 JPY total**, within a **100,000 JPY** budget. It performs twelve simulated starts and original-Receipt recovery without a scheduler or a year-long wait. A separate approval reserves 40,000 JPY in January and February; March's valid signed input would total 120,000 JPY and is rejected. No Ticket is issued, reservations remain 80,000 JPY, and this rejection comparison starts no processor. Temporary databases are removed when the example ends. `examples/long_payment.rb` is also available in this image.
 
-## 複数商品・数量
+This bounded UTC-monthly JPY profile is **not full generic AP2 MONTHLY conformance**. Content lasts at most 400 days while presentation proofs stay short-lived. Long selective/PISP/date composition, daily splitting, catch-up and automatic allowance refunds are unsupported. See the [SDK long-Payment contract](https://github.com/cuichangquan/ap2-mandate-verifier/blob/main/docs/LONG_PAYMENT.md).
 
-http://127.0.0.1:3100/multi-item はCoffee2個＋Tea3個の成功と、Tea2個だけの不足を比較します。真正なSuccess／Error Receiptも表示し、Errorでも署名検証はtrue、購入成功通知はfalseになります。
-
-ページは入力構築・prepare・保存・restore・現在状態のverify・Checkout署名・Receipt署名と検証を公開APIで実行します。Issuer／Agent envelopeはデモ内の合成試験処理で、製品発行APIではありません。
-
-明示profileは `ap2.checkout.single_merchant_multi_item` v1です。最大8明細・8要件・各8候補、商品IDで数量を完全割当てし、要件IDと明細IDは別です。同じ商品の複数行を保持し、候補の重なりを支持し、余剰・不足・二重充当を拒否します。旧 `ap2.checkout.single_merchant_sku` v1は通常4ケースで引き続き利用し、定義と受理範囲は変えていません。
-
-税／送料／割引・複数販売者・実決済は対象外です。[複数明細契約](https://github.com/cuichangquan/ap2-mandate-verifier/blob/main/docs/MULTI_ITEM_CHECKOUT.md)、[公式Python SDKとの差異](https://github.com/cuichangquan/ap2-mandate-verifier/blob/main/docs/MULTI_ITEM_INTEROP.md)、[今回の公開Gem検証](docs/PUBLISHED_160.md)を参照してください。
-
-**EvidenceもReceipt真正性も購入・決済の実行許可ではありません。** 業務結果はアプリが明示し、実決済・注文更新・nonce消費は行いません。すべて合成データ・メモリ内テスト鍵で、実Issuerの信頼を示しません。固定時計は1800000000、期限切れケースは1800000101です。
-
-## テスト
+## Tests and translation maintenance
 
 ```sh
 docker run --rm --network none --cpus 1 --memory 512m --pids-limit 128 \
-  ap2-mandate-verifier-demo:local sh -c \
-  'timeout 120 bundle exec ruby test/demo_test.rb && timeout 60 bundle exec ruby test/merchant_scenario_test.rb && timeout 60 bundle exec ruby test/multi_item_scenario_test.rb'
-```
-
-両architectureのno-cache手順と実測範囲は[Docker検証記録](docs/DOCKER_PORTABILITY_160.md)、公開1.6.0の従来実測結果は[公開Gem検証記録](docs/PUBLISHED_160.md)へ記録します。過去の候補試験を今回のPASSとして数えません。
-
-## 固定構成・責任境界
-
-MRI4.0.9、Bundler4.0.20、railties/actionpack8.0.4、Puma6.6.1、Minitest5.27.0。Docker baseはarchitecture別の公式Ruby digestに固定しています（既存ARM64 digestは維持）。Verifier1.6.0とJSON2.19.9／JWT3.3.0／base640.3.0／OpenSSL gem4.0.2／Digest3.2.1を使用します。
-
-Dockerfileは公式Gemの **186,368 bytes** とSHA256 `62de85123e1379c538c9c4302b71a9c55c590162591169a4e335aaa03a8991f8` を導入前に照合し、同じbytesをBundler cacheへ渡します。通常導入後も全68ファイルのarchive/installed一致、依存・Ruby要件、source外からのロードを検査します。Gemは再buildしません。正式リリースsourceは [`964e572`](https://github.com/cuichangquan/ap2-mandate-verifier/tree/964e572dc16d886561293cf90ddb9e2c927346bf)。レビュー済み候補source `98f7325a9dd0ee06739fe95e1306abe9b1c6ee5d` と同一tree `c9a9faaec045a9854fded3c1b4db375332a5fa57` です。取得／provider／依存の失敗時は停止し、lockやchecksumを緩めません。
-
-`ScenarioVerifier` は独立した業務情報と署名原文からprepare→保存→restore→現在状態→verifyを行います。保存したB／digestを現在値へ修復せず、利用者入力から鍵・期待注文を推測しません。
-
-[対応契約](https://github.com/cuichangquan/ap2-mandate-verifier/blob/main/docs/SUPPORT_CONTRACT.md)／[Merchant API・仕様とSDK差異](https://github.com/cuichangquan/ap2-mandate-verifier/blob/main/docs/MERCHANT_SIGNING.md)／[過去の候補・実測履歴](docs/HISTORY.md)。実Issuer・Host本番・原子的nonce消費・失効・性能・Web運用等のHOLDは維持します。RailsデモはMRI4.0.9固定です。SDK単体のMRI3.4.12／4.0.9対応と区別し、他OSやデモのRuby3.4.12は未検証です。[MIT](LICENSE)、[出所通知](THIRD_PARTY_NOTICES.md)、[業務fixture通知](fixtures/input_builder/NOTICE.md)を保持します。実行ログ・依存archive・一時セッション鍵はコミットしません。
-
-## 開発source比較用の候補手順
-
-通常利用は上記Dockerfileだけで完結します。`Dockerfile.candidate`／`Gemfile.candidate` はローカルsourceの比較用として別経路に残しています。公開Gemと同じversion表示でもそのbuild物は公開bytesの証明にならず、公開Gemの代用にしません。この公開後整備では候補Gemをbuildしません。
-
-この比較経路は歴史的な0.6.0 source用です。`Gemfile.candidate.lock`を専用に使い、
-1.6.0の通常起動lockと混ぜません。現行1.6.0 sourceの候補build手順ではありません。
-
-過去の候補起動・試験は[0.6.0候補の歴史記録](docs/MULTI_ITEM_CANDIDATE.md)へ、さらに古い候補は[CANDIDATE.md](CANDIDATE.md)へ残しています。
-
-![歴史記録：公式0.5.0による成功・拒否Receiptの実画面](docs/images/merchant050.jpg)
-
-## Direct購入側API（0.7.0から継続）
-
-1.0.0は`CheckoutJWT.verify`、`Buyer.issue_closed/present_closed/verify`と
-Direct Receipt profileを公開しています。[承認→発行→提示→販売者検証→Receipt確認の完全実行例](https://github.com/cuichangquan/ap2-mandate-verifier/blob/main/examples/direct_checkout.rb)と
-[API契約](https://github.com/cuichangquan/ap2-mandate-verifier/blob/main/docs/BUYER_DIRECT_CHECKOUT.md)を参照してください。
-1販売者・1〜8明細・複数商品に対応します。
-
-このRails画面は既存のOpen→Agent Closed検証と販売者署名／Receiptの合成シナリオを維持しています。
-Directの本人認証・承認UI・Provider鍵管理を実装した画面ではありません。
-本人認証・購買権限・保護された承認記録・永続一意制約／原子処理・結果不明時の照会は利用アプリの責任です。
-Gem検証やデモ受理は実購入・実決済成功を意味しません。
-
-## Published Payment example
-
-```sh
+  ap2-mandate-verifier-demo:local timeout 900 sh test/docker_validation.sh normal
 docker run --rm --network none --cpus 1 --memory 512m --pids-limit 128 \
-  ap2-mandate-verifier-demo:local timeout 120 bundle exec ruby examples/payment.rb
+  ap2-acceptance:local timeout 600 sh test/docker_validation.sh acceptance
+# With the purchase stack running; creates synthetic purchases and restarts agents.
+sh test/purchase_docker_validation.sh
 ```
 
-Direct／条件付きPaymentと両Receipt結果を模擬します。署名検証は実決済の成功や最終実行許可ではありません。
+For locale behavior, translation updates, legacy stored Japanese values and the verification checklist, see [Localization](docs/LOCALIZATION.md). The [purchase validation record (English, historical)](docs/PURCHASE_VALIDATION.md), [published 1.6.0 record (Japanese, historical)](docs/PUBLISHED_160.md) and [Docker record (English/Japanese)](docs/DOCKER_PORTABILITY_160.md) identify their tested environments and revisions. They are not a claim that a later commit passed. Check the relevant pull request for current-commit CI and review results.
 
-## Published selective Payment example
+## Supported scope and responsibility boundaries
 
-```sh
-docker run --rm --network none --cpus 1 --memory 512m --pids-limit 128 \
-  ap2-mandate-verifier-demo:local timeout 120 bundle exec ruby examples/selective_payment.rb
-```
+- The standard multi-item profile is `ap2.checkout.single_merchant_multi_item` v1: up to eight lines, eight requirements and eight candidates per requirement. It fully allocates quantities by product ID, preserves repeated-product lines, supports overlapping candidate sets and rejects excess, shortage and double allocation. Requirement IDs and line IDs are distinct. The original `ap2.checkout.single_merchant_sku` v1 remains unchanged for the four basic cases.
+- Multi-item tax, shipping, discounts, multiple merchants and real payments are out of scope. See the [multi-item contract](https://github.com/cuichangquan/ap2-mandate-verifier/blob/main/docs/MULTI_ITEM_CHECKOUT.md) and [Python SDK interoperability differences](https://github.com/cuichangquan/ap2-mandate-verifier/blob/main/docs/MULTI_ITEM_INTEROP.md).
+- Direct APIs include `CheckoutJWT.verify` and `Buyer.issue_closed/present_closed/verify`, with a Direct Receipt profile for one merchant and one to eight lines. See the [complete Direct example](https://github.com/cuichangquan/ap2-mandate-verifier/blob/main/examples/direct_checkout.rb) and [API contract](https://github.com/cuichangquan/ap2-mandate-verifier/blob/main/docs/BUYER_DIRECT_CHECKOUT.md). The standard screens are synthetic Open → Agent Closed scenarios, not a Direct authentication/approval interface.
+- Applications own authentication, consent, protected approvals, Provider keys, independently current trust, revocation, orders/challenges/time, durable one-use state, final execution permission and processor reconciliation. The purchase stack illustrates some of these duties locally; it does not make them automatic SDK guarantees.
+- Signed Mandates and Receipts, protocol keys and values, IDs and machine-readable codes are never translated. Human-readable UI explanations are localized. Research-profile verification is not general AP2 conformance, production issuer trust or proof of a real payment.
 
-公開Gemの同梱例を使い、機密保持する5disclosuresと送信する3disclosuresを比較し、選択Paymentと両Receipt結果を検証します。非選択値・salt・full wireは出力しません。候補数・順序・issuerJWTのリンク可能性までは隠しません。
+## Pinned environment and provenance
 
-## Published selective Checkout + Payment example
+The demo pins MRI **4.0.9**, Bundler **4.0.20**, railties/actionpack **8.0.4**, Puma **6.6.1** and Minitest **5.27.0**. The verifier is **1.6.0**, with JSON **2.19.9**, JWT **3.3.0**, base64 **0.3.0**, OpenSSL gem **4.0.2** and Digest **3.2.1**. Architecture-specific official Ruby digests and frozen lockfiles are retained. Standalone SDK support for MRI 3.4.12/4.0.9 is separate from this Rails demo's fixed MRI 4.0.9 environment; other native OS/Ruby combinations are not claimed here.
 
-```sh
-docker run --rm --network none --cpus 1 --memory 512m --pids-limit 128 \
-  ap2-mandate-verifier-demo:local timeout 120 bundle exec ruby examples/selective_checkout.rb
-```
+The standard Dockerfile checks the published gem's **186,368 bytes** and SHA256 `62de85123e1379c538c9c4302b71a9c55c590162591169a4e335aaa03a8991f8` before installation, then supplies those same bytes to Bundler. It checks all **68** installed/archive payloads, dependencies, Ruby requirements and loading outside the source tree. The gem is not rebuilt. Release source [`964e572`](https://github.com/cuichangquan/ap2-mandate-verifier/tree/964e572dc16d886561293cf90ddb9e2c927346bf) has the same tree `c9a9faaec045a9854fded3c1b4db375332a5fa57` as reviewed candidate `98f7325a9dd0ee06739fe95e1306abe9b1c6ee5d`. Download, provider or dependency failures stop the build rather than relaxing checksums or locks.
 
-公開1.6.0の同梱例を使い、販売者・商品候補を絞ったCheckoutとPaymentを続けて検証します。全要件・数量は残り、独立Host入力・原文hash・両Receipt結果まで確認します。販売者と商品候補は独立した許可集合で、相関条件を保証しません。最終購入許可・永続nonce消費・注文現在性・失効・実決済はアプリ責任です。
+`ScenarioVerifier` prepares, stores, restores and verifies signed inputs against independent current business state. It does not repair a stored binding/digest to match current values or infer trusted keys/orders from submitted data. Standard fixture clocks are fixed at `1800000000`, or `1800000101` for expiry.
 
-## Published PISP + execution-date example
+See the [support contract](https://github.com/cuichangquan/ap2-mandate-verifier/blob/main/docs/SUPPORT_CONTRACT.md), [merchant API and specification differences](https://github.com/cuichangquan/ap2-mandate-verifier/blob/main/docs/MERCHANT_SIGNING.md), [MIT license](LICENSE), [third-party notices](THIRD_PARTY_NOTICES.md) and [fixture notice (English)](fixtures/input_builder/NOTICE.md). Logs, dependency archives and temporary session keys must not be committed.
 
-```sh
-docker run --rm --network none --cpus 1 --memory 512m --pids-limit 128 \
-  ap2-mandate-verifier-demo:local timeout 120 bundle exec ruby examples/payment_policy.rb
-```
+### Historical candidate builds
 
-明示profileでDirect・条件付き・選択的Paymentを試します。署名されたPISPと日時を独立したアプリの信頼済み実行予定と照合し、日時窓の包含境界をUTC瞬間として比較します。旧profileの意味は変わりません。これはQWAC認証、実行予約、実決済や精算の証明ではありません。
-
-## Published Payment acceptance example
-
-通常imageを上記手順で用意した後、任意のSQLite driverだけを追加するARM64例です。SDKの基礎依存と通常Railsのlockは変えません。
-
-```sh
-docker build --platform linux/arm64 -f Dockerfile.acceptance -t ap2-acceptance:local .
-docker run --rm --network none --cpus 1 --memory 512m --pids-limit 128 \
-  ap2-acceptance:local timeout 120 ruby examples/payment_acceptance.rb
-```
-
-機密のproofを出力せず、初回予約、再署名再送、開始CAS、模擬dispatch一回、unknown保存、同じDBの再open、遅延Receipt復旧を比較します。例のDBは合成一時DBです。本番では全worker共通の保護された永続DBと独立した承認occurrenceが必要で、起動時のDB再作成・任意UUID・timeoutを新しい実行許可に使いません。PSP照会・冪等性、障害復旧、実決済のexactly-onceは保証しません。
+Normal usage needs only the published-gem Dockerfiles above. `Dockerfile.candidate`, `Gemfile.candidate` and their separate lockfile remain a historical **0.6.0** source-comparison path, not a current 1.6.0 build recipe or evidence of published gem bytes. Do not mix that lockfile into normal startup. Earlier records remain available in [History (English/Japanese)](docs/HISTORY.md), [0.6.0 multi-item candidate (Japanese)](docs/MULTI_ITEM_CANDIDATE.md) and [older candidates (English, with Japanese scenario labels)](CANDIDATE.md).

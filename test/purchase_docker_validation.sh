@@ -8,7 +8,8 @@ $COMPOSE exec -T authority timeout 180 sh -c '
   bundle exec ruby test/purchase_transport_test.rb &&
   bundle exec ruby test/purchase_setup_test.rb &&
   bundle exec ruby test/purchase_runtime_test.rb &&
-  bundle exec ruby test/purchase_ui_test.rb
+  bundle exec ruby test/purchase_ui_test.rb &&
+  bundle exec ruby test/purchase_locale_test.rb
 '
 $COMPOSE exec -T buyer timeout 30 bundle exec ruby test/purchase_tls_boundaries.rb
 $COMPOSE exec -T authority timeout 180 bundle exec ruby test/purchase_integration.rb

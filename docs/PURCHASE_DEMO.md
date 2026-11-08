@@ -1,166 +1,172 @@
-# 購入Agent × 販売Agent: AP2 / A2A ローカル実通信デモ
+[English](PURCHASE_DEMO.md) | [日本語](PURCHASE_DEMO.ja.md)
 
-このデモは「お茶3袋、合計3,000円以下」というユーザーの明示承認を、購入Agentと販売Agentの**別プロセス間のHTTPS通信**につなぎます。承認・検証・受理・模擬決済・Receipt確認を分けて観察します。
+# Buyer Agent × Seller Agent: local AP2 / A2A purchase demo
 
-**合成データだけを使います。実際のお金は動きません。外部LLM、決済口座、実カード、外部Issuer、クラウドサービスは不要です。** 既存の単体検証画面とは別のCompose構成です。既存READMEの手順・例はそのまま使えますが、両方がlocalhostの3100番を使うので同時起動しないでください。
+Approve **three bags of tea for no more than 3,000 JPY**, then follow a buyer and seller through **real HTTPS communication between separate processes**. Observe approval, verification, application acceptance, a simulated payment and buyer-side Receipt verification as separate steps.
 
-![購入デモの役割・鍵・永続化境界](images/purchase-architecture.svg)
+**Only synthetic data is used. No real money moves. No external LLM, payment account, real card, external issuer or cloud service is needed.** This Compose stack is separate from the standard browser demo. The standard README uses host port **3000**; this purchase UI uses **3100**, so both can run together. Return to the [README](../README.md) or [Quick Start](QUICK_START.md) for the other demos.
 
-## 1. 起動と最初の購入
+## 1. Startup and your first purchase
 
-**公開Gemの依存関係は`Gemfile.purchase.lock`に固定済みです。Apple SiliconのDockerでbuild・全シナリオ・実画面を確認しました。** ローカル検証の範囲は[検証台帳](PURCHASE_VALIDATION.md)、最終commitのCI・独立レビュー・統合結果は対応するPRのChecksとレビュー記録を参照してください。
-
-前提はGit、DockerとComposeです。MacへRubyやGemを直接インストールする必要はありません。リポジトリ直下で実行します。
+Dependencies are pinned in `Gemfile.purchase.lock`. You need Git, Docker and Compose, not Ruby or gems installed on your host. From the repository root:
 
 ```sh
 export COMPOSE_PROJECT_NAME=ap2-purchase-demo
 docker compose -f compose.purchase.yml up --build
 ```
 
-以降の操作も同じターミナル、または同じ`COMPOSE_PROJECT_NAME`を設定したターミナルで行います。プロジェクト名を変えると別のvolume・購入履歴になります。
+Use the same terminal, or set the same `COMPOSE_PROJECT_NAME` in subsequent terminals. A different project name creates separate volumes and purchase history. Docker selects the host's architecture; the purchase Dockerfile contains pinned Linux ARM64 and AMD64 base images.
 
-初回の`init`が役割ごとの秘密鍵、短期テスト証明書、ランダムな認証トークン、SQLiteデータを作成します。後続の`authority`、`buyer`、`seller`は別プロセスで起動します。
+The first `init` creates role-specific private keys, short-lived test certificates, random authentication tokens and SQLite data. The `authority`, `buyer` and `seller` services then run as separate processes.
 
-1. http://127.0.0.1:3100/ を開きます。
-2. 正常系を選び、商品「お茶」、数量3袋、上限3,000円、販売者・模擬支払手段を確認します。
-3. 承認チェックを入れて承認を保存します。この時点では購入を実行しません。
-4. 同じ購入IDの「実行」を押します。正常な提示は3袋×800円＝2,400円です。
-5. AP2検証、アプリ受理、模擬決済、Receipt確認の各表示と実行回数を確認します。
+1. Open **http://127.0.0.1:3100/**. English is the default. Select **日本語** at the top for Japanese.
+2. Select the valid scenario and review Tea × 3, the 3,000 JPY limit, the merchant and simulated-payment terms.
+3. Check the explicit-approval checkbox and choose **Approve these terms**. Saving approval does not execute the purchase.
+4. Choose **Run Agent / retry the same purchase** for that ID. The normal offer is **3 × 800 JPY = 2,400 JPY**.
+5. Read AP2 verification, application execution decision, mock payment result and Receipt verification separately, together with the execution count.
 
-初回起動時は他サービスの起動が間に合わず通信失敗になる場合があります。承認が保存されていれば同じ購入IDで続行します。新しい承認を発行して回避しないでください。
+A first-start communication failure can occur if another service is not yet ready. If the approval was saved, continue with the same purchase ID. Do not work around it by creating another approval.
 
-## 2. 八つのシナリオ
+### Language, ownership and navigation
 
-以下は期待する結果です。八つのシナリオは別プロセス間の実TLS/A2A統合テストで確認済みです。ブラウザでも全八ケースを確認済みです。最終commitのCI・レビュー結果は対応するPRに記録します。[検証記録](PURCHASE_VALIDATION.md)で範囲を区別しています。
+**English / 日本語** appears on every purchase page, including results and history. Language persists through forms, redirects, navigation and reloads. Unsupported values fall back to English. A language switch uses the owned purchase's saved summary; it does not issue an approval, run the agent, poll the processor or perform recovery. **Refresh status** explicitly polls the current status. Language selection itself is request-scoped, so one request does not change another user's language.
 
-| 選択 | 注入する状況 | 観察する結果 |
+Keep the same hostname (`127.0.0.1`) and browser session. The UI displays only purchases approved by that session. A different browser, private session or hostname does not acquire access merely by knowing a purchase ID. Use the purchase-history links to return to an existing purchase. Language does not change quantities, JPY amounts, approval terms, IDs or execution counts. Protocol values, signed Mandates/Receipts and machine-readable codes are not translated.
+
+## 2. Eight scenarios
+
+The table gives the expected behavior, including the valid case. Scenario identifiers are stable in both languages; the selector displays translated labels.
+
+| Scenario | Injected condition | What to observe |
 | --- | --- | --- |
-| `valid` | お茶3袋、2,400円 | 検証・受理・模擬成功・購入側の真正なSuccess確認 |
-| `budget` | 3袋×1,200円＝3,600円 | 3,000円上限を超え、Payment発行を拒否。決済未開始 |
-| `quantity` | 3袋の承認に対して2袋を提示 | Checkout発行を拒否。決済未開始 |
-| `tampered` | Checkout terminal署名を改ざん | 販売側が拒否。決済未開始 |
-| `error` | 模擬決済がErrorを返す | 真正なError Receiptでも購入成功ではない。承認再利用不可 |
-| `timeout` | 模擬結果保存後に応答を遅延 | 応答不明。元の購入IDで照会・復旧し、実行回数は1を維持 |
-| `wrong_receipt` | 別のpayment IDの署名付きReceiptを配信 | 購入側は成功と認めない。再決済もしない |
-| `invalid_receipt` | Receiptの署名を破損 | 購入側は成功と認めない。再決済もしない |
+| `valid` | Three bags of tea for 2,400 JPY | Verification, acceptance, mock success and buyer verification of the authentic Success Receipt |
+| `budget` | 3 × 1,200 JPY = 3,600 JPY | Payment issuance refused above the 3,000 JPY limit; payment not started |
+| `quantity` | Only two bags offered against approval for three | Checkout issuance refused; payment not started |
+| `tampered` | Checkout terminal signature altered | Seller rejects; payment not started |
+| `error` | Simulated payment returns Error | An authentic Error Receipt is not purchase success; approval cannot be reused |
+| `timeout` | Response delayed after saving the simulated result | Outcome unknown; refresh and recover the original ID; execution count stays 1 |
+| `wrong_receipt` | Signed Receipt for a different payment ID delivered | Buyer does not accept success and does not pay again |
+| `invalid_receipt` | Receipt signature damaged | Buyer does not accept success and does not pay again |
 
-正常系を含めて八つです。画面には秘密鍵、トークン、SD-JWT/JWS原文を出しません。異常系でもアプリが保持する本来の注文・Receiptは書き換えず、指定箇所に合成障害を注入します。
+The screen never displays private keys, tokens or raw SD-JWT/JWS documents. Failure scenarios inject faults at specified boundaries; they do not replace the application's original protected order or saved Receipt.
 
-## 3. Replay、timeout、再起動
+Read all four stages. For example, `wrong_receipt` can have a successful simulated payment while buyer-side success remains unconfirmed. Error and unknown outcomes do not authorize another dispatch. The [historical validation record (English)](PURCHASE_VALIDATION.md) records the original eight-scenario coverage; [Localization](LOCALIZATION.md) describes checks for this bilingual change. Current-commit CI and reviews belong to the relevant pull request.
 
-### 同じ購入を再実行する
+## 3. Replay, timeout and restart
 
-成功またはErrorが確定した**同じ購入ID**で再度実行します。購入側は最初に保存した原文を再利用します。販売側は既存の受理レコードを照会し、新規の決済を開始しません。模擬processorの実行回数が1のままであることを確認してください。新しく承認した購入は別IDなので、replay試験にはなりません。
+### Retry the same purchase
 
-### 応答不明を復旧する
+Run the **same purchase ID** again after Success or Error is final. The buyer reuses the originally saved wire data. The seller looks up the existing acceptance record instead of starting another payment. Check that the simulated processor's execution count remains **1**. A newly approved purchase has a different ID and is not a replay test.
 
-`timeout`では販売側が模擬processor結果を永続化した後、受理状態を`unknown`にして3秒待ちます。クライアントのread timeoutは2秒です。これはネットワーク境界を通る実際の応答timeoutを狙った障害注入です。
+### Recover an unknown outcome
 
-- 同じ購入IDで状態を更新し、復旧を選びます。
-- 保存済みのprocessor結果とReceiptを使って`reconcile`します。
-- 許可の更新、新しいOpen、別の決済キー、再決済は行いません。
-- 「模擬成功」の通知だけで終了せず、購入側Receipt確認も確認します。
+For `timeout`, the seller saves the simulated processor result, marks acceptance `unknown` and waits three seconds. The client's read timeout is two seconds. This intentionally causes a real response timeout across the network boundary.
 
-### buyer / sellerの再起動
+- Use **Refresh status**, then **Recover the saved result** on the same purchase ID.
+- Recovery reconciles the saved processor result and Receipt.
+- It does not renew permission, issue a new Open, choose a different payment key or pay again.
+- Do not stop at a mock-success notification; also check buyer-side Receipt verification.
+
+### Restart buyer and seller
 
 ```sh
 docker compose -f compose.purchase.yml restart buyer seller
 ```
 
-同じブラウザセッションの購入ページへ戻り、状態更新・復旧を試します。鍵・承認・原文・受理台帳・processor結果は各named volumeに残ります。A2A自身のTaskは標準MemoryStoreのためプロセス再起動で消えますが、購入の復旧は独立した永続購入IDを使います。
+Return to the purchase in the same browser session, then refresh or recover. Keys, approvals, original wire data, acceptance records and processor results remain in their named volumes. A2A Tasks use the standard MemoryStore and disappear on a process restart; purchase recovery uses a separate durable purchase ID.
 
-### 停止とデータの扱い
+### Stop and retain data
 
 ```sh
 docker compose -f compose.purchase.yml down
 ```
 
-通常の`down`はnamed volumeを保持します。次の`up`で初期化済みデータを使います。部分的な初期化やDB欠損を、新しい鍵・空の台帳の自動作成で修復しません。
+Ordinary `down` keeps named volumes. The next `up` uses initialized data. Partial initialization or a missing database is not silently repaired with new keys or an empty ledger.
 
-**全履歴を捨てて初めからやり直すとユーザーが決めた場合だけ**、次を実行します。鍵、承認、台帳、processor結果、セッション秘密値が削除され、以前の購入は復旧できなくなります。
+Run the following **only after deciding to discard all history and start over**. It deletes keys, approvals, ledgers, processor results and the session secret. Earlier purchases can no longer be recovered.
 
 ```sh
-# 破壊的な全リセット。通常の停止・再起動には使わない。
+# Destructive full reset. Do not use for ordinary stop or restart.
 docker compose -f compose.purchase.yml down -v
 ```
 
-共有Docker cacheや他プロジェクトを削除する`prune`は不要です。
+There is no need to `prune` shared Docker caches or remove other projects.
 
-## 4. 三つの役割と権限
+## 4. Three roles and their permissions
 
-| プロセス | 持つ秘密・状態 | できること / できないこと |
+| Process | Secrets and state held | Can / cannot do |
 | --- | --- | --- |
-| authority | Issuer/Provider署名鍵、承認DB、session secret、buyer/seller control token | 明示承認後に条件付きOpenを発行し、両Agentへ保護されたcontrol通信で配布。購入AgentへIssuer鍵を渡さない |
-| buyer | Agent署名鍵、承認の写し、最初の提示原文、seller A2A token、自身のcontrol受信token | 承認範囲内でClosedを作り、販売側A2Aへ送信。Openを発行できずseller control tokenも持たない |
-| seller | Merchant/合成Receipt署名鍵、正規注文、challenge、受理台帳、processor結果、A2A/control受信token | 注文提示、AP2検証、業務判定、単発受理、模擬実行、Receipt発行。Issuer鍵とAgent秘密鍵を持たない |
+| authority | Issuer/Provider signing key, approval database, session secret, buyer/seller control tokens | Issues conditional Open after explicit approval and provisions both agents over protected control routes. Does not give the issuer key to the buyer. |
+| buyer | Agent signing key, approval copy, first presentation wire data, seller A2A token, its own inbound control token | Creates Closed within approval and sends it to the seller's A2A endpoint. Cannot issue Open and has no seller control token. |
+| seller | Merchant/synthetic-Receipt signing key, canonical order, challenge, acceptance ledger, processor results, inbound A2A/control tokens | Offers orders, verifies AP2, applies business rules, accepts once, simulates execution and issues Receipts. Has neither issuer nor Agent private keys. |
 
-`authority-state` / `buyer-state` / `seller-state`は各プロセスにだけ`/state`としてマウントします。公開鍵とCA証明書だけを`public-trust`から`/trust:ro`に共有します。`init`だけが初期作成のため全volumeへアクセスし、ネットワークなしで終了します。CA秘密鍵はinitのメモリだけに存在し、保存しません。
+`authority-state`, `buyer-state` and `seller-state` are each mounted at `/state` only for their respective process. Only public keys and the CA certificate are shared at `/trust:ro` from `public-trust`. Only `init` has access to every volume for initial setup, and it exits without a network. The CA private key exists only in init's memory and is never saved.
 
-`PURCHASE_STATE_DIR=/state`、`PURCHASE_TRUST_DIR=/trust`が境界です。通常プロセスは非root・read-only filesystem、capabilityなし、CPU 0.75 / メモリ384MiB / PID64の上限を持ちます。DB用volumeだけは更新できます。
+`PURCHASE_STATE_DIR=/state` and `PURCHASE_TRUST_DIR=/trust` define these boundaries. Runtime processes are non-root, have a read-only filesystem and no capabilities, and are limited to 0.75 CPU, 384 MiB and 64 PIDs. Their state volume remains writable for database operations.
 
-## 5. 四つの判定を混同しない
+The [architecture diagram (Japanese labels)](images/purchase-architecture.svg) illustrates the same roles, keys, networks and storage boundaries described above.
 
-1. **AP2検証**: 署名、委任先、承認条件、merchantの注文、challenge、CheckoutとPaymentの結合を検証します。
-2. **アプリの受理**: 現在の保護された承認、数量、予算、注文状態を確認し、永続台帳の`authorize!` → `accept` → `start`で単発実行を制御します。
-3. **模擬決済の結果**: 別の永続processorレコードに結果を保存します。検証に成功しても決済成功とは限りません。timeoutでも成功済みの可能性があります。
-4. **購入側のReceipt確認**: 署名・発行者・payment ID・元のPaymentとの結合を検証します。真正なErrorは失敗、別取引または不正署名は成功未確認です。
+## 5. Keep the four decisions separate
 
-承認保存はこれら四段階より前です。承認に使う正規データはauthority側、注文とchallengeはseller側が保持し、受信した自己申告だけから信頼・正規注文を組み立てません。
+1. **AP2 verification:** verifies signatures, delegation, approval constraints, merchant order, challenge and Checkout/Payment binding.
+2. **Application execution decision:** checks current protected approval, quantity, budget and order state; durable `authorize!` → `accept` → `start` controls single execution.
+3. **Mock payment result:** saves the result in a separate durable processor record. Verification can succeed while payment fails. A timeout can occur after payment has succeeded.
+4. **Receipt verification:** the buyer checks signature, issuer, payment ID and binding to the original Payment. An authentic Error is failure; a mismatched transaction or invalid signature leaves success unconfirmed.
 
-## 6. プロトコルとコードの対応
+Approval is saved before these four stages. Authority holds canonical approval data; seller holds the canonical order and challenge. They do not construct trust or the expected order solely from incoming claims.
 
-使用する公開Gemは`ap2_mandate_verifier = 1.6.0`と`a2a-rails = 0.3.0`です。`Gemfile.purchase` / lockfileを使い、SDKソース差し替えやGemの変更はしません。
+## 6. Protocol and code map
 
-- AP2の参照元は**v0.2.0、commit `b4587ac1d055888a73b4b21750973cffba961793`固定**です。合成デモの結果を一般的なAP2準拠や実Issuer由来の証明として扱いません。
-- Checkoutは`AP2MandateVerifier::ConditionalCheckout::PROFILE_REF`（`ap2.checkout.single_merchant_multi_item`）のmulti-item条件付きprofileです。この例の商品種類はお茶1種ですが、同profileの数量要件を使います。
-- Paymentは`AP2MandateVerifier::Payment::PROFILE_REF`（`ap2.payment.single.complete.1`）の標準Payment profileです。SDKの`verified_research`等の判定範囲を本番認証・全面的な仕様適合へ読み替えません。
-- A2Aは**protocol 1.0**、JSON-RPC 2.0 envelope、`A2A-Version: 1.0`です。Gem 0.3.0はA2A protocol 0.3を意味しません。
-- `SendMessage`のtext Partをコマンド、`message.metadata.purchase_demo`をAP2 payloadに使い、Hash結果をTaskのdata Artifactで返す**アプリ定義profile**です。
-- a2a-rails 0.3.0サーバーはtext入力を受け、メタデータを保持します。正式なAP2 DataPart入力、Agent Card extension宣言、extension negotiationは実装していません。**正式なAP2 A2A extension対応とは主張しません。**
+Published dependencies are **`ap2_mandate_verifier = 1.6.0`** and **`a2a-rails = 0.3.0`**, using `Gemfile.purchase` and its lockfile. Neither SDK source overlays nor gem modifications are used.
 
-| ファイル | 役割・主なAPI |
+- The AP2 reference is pinned to **v0.2.0, commit `b4587ac1d055888a73b4b21750973cffba961793`**. Synthetic results do not establish general AP2 conformance or evidence from a real issuer.
+- Checkout uses `AP2MandateVerifier::ConditionalCheckout::PROFILE_REF` (`ap2.checkout.single_merchant_multi_item`). This scenario has one product, tea, while using the profile's quantity requirements.
+- Payment uses `AP2MandateVerifier::Payment::PROFILE_REF` (`ap2.payment.single.complete.1`). SDK results such as `verified_research` retain their scoped meaning; they are not production certification or complete specification conformance.
+- A2A uses **protocol 1.0**, JSON-RPC 2.0 envelopes and `A2A-Version: 1.0`. Gem version 0.3.0 does not mean A2A protocol 0.3.
+- This **application-defined profile** uses a `SendMessage` text Part for a command, `message.metadata.purchase_demo` for AP2 payloads and a Task data Artifact for Hash results.
+- a2a-rails 0.3.0 accepts text input and retains metadata. Formal AP2 DataPart input, Agent Card extension declaration and extension negotiation are not implemented. **This demo does not claim formal AP2 A2A extension support.**
+
+| File | Responsibility and main APIs |
 | --- | --- |
-| `purchase_demo/authority_application.rb` / `authority.rb` | CSRF・同一ブラウザ購入IDの確認、明示承認、保護されたprovision / run / recover |
-| `purchase_demo/protocol.rb` | `ConditionalCheckout.issue_open/issue_closed/present`、`Payment.issue_open/issue_closed/present/verify`、`InputBuilder.prepare/restore/inputs`、`PaymentReceipt.sign/verify` |
-| `purchase_demo/buyer.rb` | 正確な初回原文の保存、offer / purchase / status / recover、購入側Receipt検証 |
-| `purchase_demo/seller_application.rb` | `A2A::Rails::Agent`単一skill、`PurchaseHandler.call(message:, context:)`、別tokenの`/control` |
-| `purchase_demo/seller.rb` | `Runtime.seller.call(command,payload)`、`provision(payload)`、`PaymentAcceptance::Service`のlookup / accept / start / finish / unknown / reconcile |
-| `purchase_demo/store.rb` | 役割別DB、購入IDとprocessor keyの一意性、SDK SQLite受理台帳 |
-| `purchase_demo/transport.rb` | authorityの`request(service:,path:,payload:)`、buyerの`a2a(command:,payload:)`、実HTTPSとJSON-RPC検査 |
-| `purchase_demo/setup.rb` / `compose.purchase.yml` | 使い捨てテスト鍵、初期DB、独立プロセス・volume・ネットワーク境界 |
+| `purchase_demo/authority_application.rb` / `authority.rb` | CSRF and browser-owned purchase-ID checks, explicit approval, protected provision/run/recover |
+| `purchase_demo/protocol.rb` | `ConditionalCheckout.issue_open/issue_closed/present`, `Payment.issue_open/issue_closed/present/verify`, `InputBuilder.prepare/restore/inputs`, `PaymentReceipt.sign/verify` |
+| `purchase_demo/buyer.rb` | Persists the exact first wire data; offer/purchase/status/recover and buyer-side Receipt verification |
+| `purchase_demo/seller_application.rb` | Single `A2A::Rails::Agent` skill, `PurchaseHandler.call(message:, context:)`, separately authenticated `/control` |
+| `purchase_demo/seller.rb` | `Runtime.seller.call(command,payload)`, `provision(payload)`, `PaymentAcceptance::Service` lookup/accept/start/finish/unknown/reconcile |
+| `purchase_demo/store.rb` | Role-specific databases, unique purchase ID and processor key, SDK SQLite acceptance ledger |
+| `purchase_demo/transport.rb` | Authority `request(service:,path:,payload:)`, buyer `a2a(command:,payload:)`, real HTTPS and JSON-RPC checks |
+| `purchase_demo/setup.rb` / `compose.purchase.yml` | Disposable test keys, initial databases, separate processes, volumes and networks |
 
-### TLS / SSRFの境界
+### TLS and SSRF boundaries
 
-buyer/sellerはPumaが直接TLSを終端します。専用アプリクライアントは固定の`https://buyer:3443`と`https://seller:3443`、許可されたrouteだけを呼び、外部からURLを受け取りません。Agent Cardのendpointも固定値との完全一致を確認します。
+Puma terminates TLS directly on buyer and seller. The dedicated application client calls only fixed `https://buyer:3443` and `https://seller:3443` URLs and allowlisted routes; it never accepts an external URL. Agent Card endpoints must exactly match the fixed values.
 
-TLS peerとhostnameを検証し、専用CAを使います。環境proxy・redirect・自動retryは禁止。request/responseは128KiB、JSON深さ32、open/read/writeは各2秒、合計8秒が上限です。元のHTTP例外や応答本文を画面へ返しません。
+TLS peer and hostname verification use the dedicated CA. Environment proxies, redirects and automatic retries are disabled. Requests and responses are limited to 128 KiB, JSON depth to 32, open/read/write timeouts to two seconds each and total time to eight seconds. Raw HTTP exceptions and response bodies are not returned to the UI.
 
-これはDocker内の既知の2サービス向け専用transportであり、任意の外部Agentへ接続する汎用clientではありません。**a2a-railsの本番TLS/SSRF保護は変更せず、private reflection、allow-private設定、VERIFY_NONEは使いません。** buyer/sellerは`purchase`内部ネットワークだけに参加し、ホストへのポート公開はありません。authorityは内部ネットワークに加え、Docker Desktopでlocalhostへのポート公開を成立させる`ui` bridgeにも参加します。公開bindは`127.0.0.1:3100`だけです。authorityまでネットワーク外通信が不可能だとは主張しません。
+This is a dedicated transport for two known Docker services, not a generic external-agent client. **It does not change a2a-rails production TLS/SSRF protection or use private reflection, allow-private settings or `VERIFY_NONE`.** Buyer and seller join only the internal `purchase` network and expose no host ports. Authority also joins a `ui` bridge to support Docker Desktop loopback publishing. Only `127.0.0.1:3100` is published. This is not a claim that authority cannot reach external networks.
 
-## 7. 有効期限と制限
+## 7. Expiry and limits
 
-- Open承認: 発行から600秒。challenge: 最大300秒かつ承認期限内。時間が過ぎた未実行購入は拒否します。
-- テストTLS証明書: 初期化から7日。期限を無視せず、期限切れなら通信失敗になります。更新はこのデモでは自動化していません。
-- timeoutや再起動を理由に承認やchallengeを自動延長しません。消費済みの購入の結果照会は新しい支払許可を意味しません。
-- Receipt照合の期間は元の承認発行時刻から24時間。復旧も無期限成功を保証しません。
-- 台帳のreserved状態でプロセスが停止し、processor結果がまだ無い場合、結果照会はできますが自動再dispatchはしません。明示的な運用判断が必要です。
-- 模擬processorは永続レコードによる1回の実行を狙うローカル実装です。実際の決済事業者との分散exactly-once保証ではありません。
-- 公開trust情報は合成registryです。実際の本人確認、KMS/HSM、Issuer接続、認証局運用、取消・失効、在庫、精算はありません。
-- localhost HTTPのUIには本番のログインやTLS終端がありません。インターネット公開・ポート転送・公開デプロイには使わないでください。
+- Open approval lasts **600 seconds**. A challenge lasts at most **300 seconds**, within approval expiry. Unexecuted purchases are rejected after expiry.
+- Test TLS certificates last **seven days** from initialization. Expiry is enforced and causes communication failure; renewal is not automated.
+- Timeout or restart does not automatically extend approval or challenge validity. Looking up a consumed purchase does not authorize a new payment.
+- Receipt comparison is limited to **24 hours from original approval issuance**. Recovery is not guaranteed indefinitely.
+- If a process stops with a reserved acceptance record and no processor result, lookup is available but automatic redispatch is not. An explicit operational decision is required.
+- The local simulated processor uses persistent records to aim for one execution. It does not guarantee distributed exactly-once execution with a real payment provider.
+- Public trust is a synthetic registry. There is no real identity verification, KMS/HSM, issuer integration, CA operation, revocation, inventory or settlement.
+- The loopback HTTP UI has no production login or TLS termination. **Do not expose it to the internet, forward its port or deploy it publicly.**
 
-## 8. 検証状況と実行方法
+## 8. Verification and test commands
 
-**2026-11-07のApple Silicon / Docker Desktop 29.9.2、native Linux ARM64で、新構成のbuildとテストを確認しました。** protocol / transport / setup / runtime / UI / live integrationの合計は**46 tests / 399 assertions、失敗なし**です。実TLSのCA・hostname拒否、認証tokenの役割分離、本番SSRF policyのprivate宛拒否、実A2Aの4並行呼び出しで実行回数1、実際の通信timeout後の元Receipt復旧、buyer/seller再起動後の実行回数1・元Receipt照合も確認しました。
+The original, pre-localization **2026-11-07** record used Apple Silicon / Docker Desktop 29.9.2 with native Linux ARM64. It reports **46 tests / 399 assertions**, plus live TLS, four concurrent A2A calls with one execution, timeout recovery and restart recovery. Desktop and 390 × 844 Chrome checks covered all eight scenarios. Standard/acceptance image regressions reported 11 tests / 221 assertions, eight wrappers and 68 matching gem files. These are **historical observations**, not results for this bilingual change or untested environments. See the [original validation ledger (English)](PURCHASE_VALIDATION.md), [localization guide](LOCALIZATION.md) and the relevant PR's Checks/reviews for current evidence.
 
-実Chromeのdesktopと390×844画面で全八ケースを確認済みです。正常系の明示承認・同ID再実行・更新・戻る、承認checkbox、別ホスト表記のセッションからの購入アクセス拒否も確認しました。timeoutはunknown→同ID再実行でもunknown→復旧Success、実行回数1を維持しました。`Referrer-Policy: no-referrer`で正規フォームが`Origin: null`となる問題を`same-origin`へ修正し、CSRF確認は維持しています。既存デモも最新checkoutからnormal/acceptance imageを再buildし、11 tests / 221 assertions、八つのwrapper、AP2 archive 68ファイル一致を確認しました。この記録はARM64でのローカル証拠であり、AMD64や最終commitへのCI結果ではありません。対応するPRのChecks・レビュー・統合記録で最終状態を確認してください。[環境・固定Gem hash・lockfile・実行範囲](PURCHASE_VALIDATION.md)を参照してください。
-
-起動済みのデモ全体を確認する補助スクリプトは次です。合成購入を作成し、buyer/sellerを再起動します。volumeの削除は行いません。個別のlive TLS境界試験も併せて実行してください。
+The helper below checks a running stack, creates synthetic purchases and restarts buyer/seller. It does not delete volumes. It includes the live TLS boundary checks.
 
 ```sh
 sh test/purchase_docker_validation.sh
 ```
 
-Docker imageを用意した後、DBや鍵を必要としない単体テストは別コンテナで実行できます。
+After building the image, protocol and transport unit tests that need no keys or database can run in separate containers:
 
 ```sh
 docker compose -f compose.purchase.yml build
@@ -170,17 +176,17 @@ docker compose -f compose.purchase.yml run --rm --no-deps authority \
   bundle exec ruby -Itest test/purchase_protocol_test.rb
 ```
 
-稼働中のsellerに対する実TLS境界試験はbuyerコンテナから実行します。正しいCA/hostname、信頼しないCA、不正hostname、control権限拒否、鍵分離、本番SSRF policyのprivate宛拒否を確認します。単なるソケット接続成功をTLS検証成功とは扱いません。
+Run the live TLS boundary test from buyer against a running seller. It checks trusted CA/hostname, untrusted CA, wrong hostname, control-permission rejection, key separation and the production SSRF policy's rejection of private targets. A successful socket connection alone is not TLS-verification evidence.
 
 ```sh
 docker compose -f compose.purchase.yml exec buyer \
   bundle exec ruby test/purchase_tls_boundaries.rb
 ```
 
-`test/purchase_runtime_test.rb`は一時ディレクトリとプロセス内transportを使う役割統合テストです。`test/purchase_setup_test.rb`は必要ファイル欠損・空DB・権限・symlinkを確認します。同じ方法で実行できますが、どちらも実TLS通信の証拠にはなりません。全八シナリオと署名・Receipt不正時の画面表示も実Chromeで確認済みです。ローカル成功を、未確認のホスト構成や最終commitのCIへ一般化しません。
+`test/purchase_runtime_test.rb` uses a temporary directory and an in-process transport to test role integration. `test/purchase_setup_test.rb` covers missing files, empty databases, permissions and symlinks. They can run with the same container method but do not prove real TLS behavior. Browser checks should cover both languages, all eight results, ownership/CSRF, recovery, language persistence and desktop/mobile layouts. See [Localization](LOCALIZATION.md) for translation maintenance and legacy-data compatibility.
 
-## 9. アプリ実装と将来のSDK改善を分ける
+## 9. Application code versus future SDK improvements
 
-今回実装したのは、承認UI、役割別鍵管理、固定transport、control配布、購入ID管理、保護された注文/challenge、永続processorとReceiptの照会です。これらをSDKが自動で保証しているとは扱いません。
+This application implements the approval UI, role-specific key management, fixed transport, control provisioning, purchase IDs, protected orders/challenges, durable processor and Receipt lookup. These are not automatic SDK guarantees.
 
-将来の改善候補は、正式なA2A structured input/extension宣言・negotiation、公開された安全なローカル検証transport seam、複数profileをまたぐ入力構築の使いやすさ、受理・照会・Receiptの型付き結果、承認期限と復旧結果の説明しやすい診断です。いずれも**この変更でSDKへ実装した機能ではなく**、互換性・セキュリティレビューを別途要する候補です。
+Possible future SDK work includes formal A2A structured input/extension declaration and negotiation, a public safe local-testing transport seam, simpler input building across profiles, typed acceptance/status/Receipt results, and clearer diagnostics for approval expiry and recovery. These are **not SDK features implemented by this change**; each requires separate compatibility and security review.

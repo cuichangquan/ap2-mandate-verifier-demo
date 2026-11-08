@@ -31,8 +31,8 @@ module PurchaseDemo
       provision(row) unless row["provisioned"]
       save_summary(id, transport.request(service: "buyer", path: "/control", payload: {"command" => "run", "purchase_id" => id}))
     rescue Transport::Error
-      @store.update(id) { |r| r.merge("summary" => summary(r).merge("payment_status" => "応答不明・照会待ち",
-        "reason" => "応答を確認できません。同じ購入IDの状態を照会してください。新しい購入許可は発行しません。")) }
+      @store.update(id) { |r| r.merge("summary" => summary(r).merge("payment_status" => "response_unknown",
+        "reason" => "authority_unreachable")) }
       status(id: id)
     end
     def recover(id:)

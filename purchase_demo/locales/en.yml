@@ -1,0 +1,143 @@
+{
+  "en": {
+    "purchase": {
+      "ui": {
+        "page_title": "Tea Purchase Lab · Purchase delegation demo",
+        "brand_description": "Purchase delegation sandbox",
+        "language": "Language",
+        "test_only": "TEST ONLY · No real charges",
+        "eyebrow": "BUYER → AGENT → MERCHANT",
+        "headline_first": "You set the terms.",
+        "headline_second": "Check the evidence at every step.",
+        "intro": "Follow a tea purchase from explicit approval through mock payment and Receipt verification. Passing verification alone does not complete a purchase. No orders are sent to a real shop, and no card is charged.",
+        "approval_section": "01 / BUYER APPROVAL",
+        "approval_title": "Review and approve purchase terms",
+        "product": "Tea",
+        "product_symbol": "T",
+        "merchant_currency": "Merchant: Tea Shop · Currency: JPY",
+        "quantity": "Approved quantity",
+        "bags": "bags",
+        "budget": "Spending limit",
+        "approval_explainer": "You approve the product, quantity, and spending limit. The merchant offer the Agent receives later is verified against these terms.",
+        "scenario": "Scenario to try",
+        "consent": "I have reviewed and explicitly approve this mock purchase of 3 bags of tea from Tea Shop for a total of no more than JPY 3,000.",
+        "approve": "Approve these terms",
+        "approval_only": "Approval does not start execution. Start the Agent on the next screen.",
+        "result_section": "02 / EXECUTION & EVIDENCE",
+        "result_title": "Current purchase status",
+        "purchase_id": "Purchase ID (unchanged by retries or recovery)",
+        "current_approval": "Current approval: 3 bags of tea / limit JPY 3,000",
+        "current_scenario": "Scenario: %{scenario}",
+        "offer": "Merchant offer: %{quantity} bags / %{amount} %{currency}",
+        "pending": "Not received",
+        "unknown_scenario": "Unknown scenario",
+        "execution_count": "Mock payment executions",
+        "executions": "%{count} executions",
+        "run": "Run Agent / retry the same purchase",
+        "recover": "Recover the saved result",
+        "refresh": "Refresh status",
+        "recovery_warning": "If the response is interrupted, check the same ID instead of creating a new purchase. Do not treat a purchase as complete before its Receipt is verified.",
+        "empty_title": "No purchase approved yet",
+        "empty_description": "Review and approve the terms to see the four stages and execution count here.",
+        "not_performed": "Not performed",
+        "roles_section": "03 / TRUST BOUNDARIES",
+        "roles_title": "Three roles, separate responsibilities",
+        "authority_label": "BUYER AUTHORITY",
+        "authority_title": "Retains buyer approval",
+        "authority_description": "Records the purchase terms and explicit approval, then issues delegation. Approval in this browser is the starting point.",
+        "buyer_label": "BUYER AGENT",
+        "buyer_title": "Buys within the approved terms",
+        "buyer_description": "Receives the merchant offer and assembles the purchase data within the approved scope.",
+        "merchant_label": "MERCHANT / HOST",
+        "merchant_title": "Verifies and decides whether to execute",
+        "merchant_description": "Checks against the merchant order, prevents duplicate execution, and runs the mock payment. Returns the result in a Receipt.",
+        "limitations_title": "Technical boundaries and demo limitations",
+        "limitations": "AP2 cryptographic verification, application execution controls, mock payment, and Receipt verification are separate stages. Judge the result using all stages, including Receipt verification. This is a local test environment, not a production identity or card payment service.",
+        "privacy": "Private keys, nonces, and complete signed data are never shown on screen or in Rails logs. Only purchases approved in this browser are displayed.",
+        "history": "Purchase history in this browser",
+        "footer": "Local use only / Synthetic data only / No real purchases, transfers, or charges",
+        "unknown_status": "Unknown state; check the saved result",
+        "unknown_reason": "No translated explanation is available for this saved result. Check the four stages before taking action."
+      },
+      "statuses": {
+        "not_run": "Not run",
+        "approved": "Explicitly approved",
+        "approved_pending": "Approved; not accepted",
+        "not_started": "Not started",
+        "unverified": "Not verified",
+        "issuance_refused": "Conditions do not match; issuance refused",
+        "rejected": "Rejected",
+        "not_accepted": "Rejected; not accepted",
+        "verified": "Verification passed",
+        "unknown": "State unknown",
+        "accepted_no_retry": "Durably accepted; execution cannot repeat",
+        "lookup_required": "Check status; do not execute again",
+        "reservation_held": "Execution refused; acceptance reservation retained",
+        "mock_success": "Mock payment succeeded",
+        "mock_error": "Mock payment failed",
+        "mock_success_verified": "Mock payment succeeded (Receipt verified)",
+        "mock_error_verified": "Mock payment failed (Error verified)",
+        "unconfirmed_no_retry": "Success unconfirmed; do not pay again",
+        "unconfirmed_pending": "Success unconfirmed; awaiting status",
+        "response_unknown": "Response unknown; awaiting status",
+        "receipt_success": "Authentic Success; purchase success reported",
+        "receipt_error": "Authentic Error; purchase did not succeed",
+        "receipt_rejected": "Rejected; not an authentic Receipt for this purchase"
+      },
+      "reasons": {
+        "approval_saved": "Approval saved. Run the buyer Agent to continue.",
+        "authority_unreachable": "The response could not be confirmed. Check the same purchase ID. No new purchase authorization is issued.",
+        "checkout_refused": "Checkout issuance was refused because its signature, quantity, approval conditions, or expiry could not be verified.",
+        "payment_refused": "Payment issuance was refused because its signature, budget, approval conditions, or expiry could not be verified.",
+        "receipt_rejected": "The Receipt signature or its binding to the transaction ID and original Payment does not match. Do not treat this as a successful purchase or pay again.",
+        "purchase_complete": "Approval conditions, AP2 verification, durable acceptance, mock payment, and buyer-side Receipt verification are complete. No real money moved.",
+        "payment_failed": "The Error Receipt signature is authentic, but the mock payment failed. This approval will not be reused to pay again.",
+        "response_timeout": "The request timed out. The same purchase ID and original signed data are retained. Check status or recover the saved result.",
+        "ap2_rejected": "AP2 rejected the signature, approval conditions, or binding to the order.",
+        "application_rejected": "The current approval, quantity, budget, or order state does not meet the execution conditions.",
+        "approval_changed": "Execution did not start because the current approval state changed. The acceptance reservation is retained.",
+        "binding_mismatch": "The signature, original signed data, or binding to the order does not match.",
+        "result_saved": "The saved mock payment result was returned. Buyer-side Receipt verification is still required.",
+        "purchase_retained": "The same purchase ID and state are retained. No new payment authorization is issued."
+      },
+      "scenarios": {
+        "valid": "Valid: 3 bags of tea for JPY 2,400",
+        "budget": "Over budget: JPY 3,600 offer",
+        "quantity": "Wrong quantity: 2 bags offered",
+        "tampered": "Tampered purchase data",
+        "error": "Mock payment returns an error",
+        "timeout": "Response lost after mock payment",
+        "wrong_receipt": "Receipt for a different purchase",
+        "invalid_receipt": "Receipt with an invalid signature"
+      },
+      "flash": {
+        "approval_required": "Review and approve the product, quantity, and spending limit.",
+        "approval_saved": "You approved these purchase terms. Execution has not started.",
+        "approval_failed": "Approval could not be saved. Check the current state before trying again.",
+        "run_failed": "The execution result could not be confirmed. Refresh status before retrying.",
+        "recovered": "The saved result was requested. Check the status of each stage.",
+        "recovery_failed": "Recovery could not be completed. Keep the same purchase ID and check again.",
+        "expired_form": "This form has expired. Reload the page and try again.",
+        "unknown": "A previous message could not be identified. Check the current purchase status before taking further action."
+      },
+      "stages": {
+        "ap2": {
+          "title": "AP2 verification",
+          "description": "Verifies signatures, purchase terms, and payment terms."
+        },
+        "app": {
+          "title": "Application execution decision",
+          "description": "Checks application state and prevents duplicate execution."
+        },
+        "payment": {
+          "title": "Mock payment result",
+          "description": "The test payment result. No real charges."
+        },
+        "receipt": {
+          "title": "Receipt verification",
+          "description": "Verifies the signature and binding to this purchase."
+        }
+      }
+    }
+  }
+}

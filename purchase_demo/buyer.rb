@@ -41,10 +41,10 @@ module PurchaseDemo
         # causes fresh issuance, a new approval, or a different processor key.
         consume(row, transport.a2a(command: "purchase", payload: {"purchase_id" => id, "wires" => row.fetch("wires")}))
       rescue Protocol::Invalid => error
-        reason = error.code == :checkout_refused ? "Checkoutの署名・数量・承認条件・有効期限の確認に失敗し、発行を拒否しました。" :
-          "Paymentの署名・予算・承認条件・有効期限の確認に失敗し、発行を拒否しました。"
+        reason = error.code == :checkout_refused ? "checkout_refused" :
+          "payment_refused"
         row = @store.update(id) { |r| r.merge("refused" => true, "summary" => summary(r).merge(
-          "ap2_status" => "条件不一致・発行拒否", "app_status" => "拒否・未受理", "payment_status" => "未開始", "reason" => reason)) }
+          "ap2_status" => "issuance_refused", "app_status" => "not_accepted", "payment_status" => "not_started", "reason" => reason)) }
         {"summary" => summary(row)}
       rescue Transport::Error
         uncertain(id)
@@ -74,28 +74,28 @@ module PurchaseDemo
           not_before: approval.fetch("issued_at"), not_after: approval.fetch("issued_at") + 86_400)
         checked = Protocol.verify_receipt(receipt_jwt: receipt, closed_sd_jwt: row.fetch("wires").fetch("payment_closed"), context: context, now: now)
         next_summary["payment_status"] = if checked.verified?
-          checked.payment_succeeded? ? "模擬成功（Receipt確認済み）" : "模擬失敗（Error確認済み）"
+          checked.payment_succeeded? ? "mock_success_verified" : "mock_error_verified"
         else
-          "成功未確認・再決済禁止"
+          "unconfirmed_no_retry"
         end
-        next_summary["receipt_status"] = checked.verified? ? (checked.payment_succeeded? ? "真正なSuccess・購入成功通知" : "真正なError・購入成功ではない") : "拒否・この購入の真正なReceiptではない"
+        next_summary["receipt_status"] = checked.verified? ? (checked.payment_succeeded? ? "receipt_success" : "receipt_error") : "receipt_rejected"
         next_summary["reason"] = if !checked.verified?
-          "Receiptの署名または取引ID・元のPaymentとの結合が一致しません。購入成功として扱わず、再決済もしません。"
+          "receipt_rejected"
         elsif checked.payment_succeeded?
-          "承認条件、AP2検証、永続受理、模擬決済、購入側のReceipt確認が完了しました。実際のお金は動いていません。"
+          "purchase_complete"
         else
-          "Error Receiptの署名は真正ですが、模擬決済は失敗です。同じ承認を再利用して決済しません。"
+          "payment_failed"
         end
       else
-        next_summary["receipt_status"] = "未確認"
-        next_summary["payment_status"] = "成功未確認・照会待ち" unless result["summary"]["payment_status"] == "未開始"
+        next_summary["receipt_status"] = "unverified"
+        next_summary["payment_status"] = "unconfirmed_pending" unless SummaryCodes.status(result["summary"]["payment_status"]) == "not_started"
       end
       saved = @store.update(row.fetch("id")) { |r| r.merge("summary" => next_summary) }
       {"summary" => summary(saved)}
     end
     def uncertain(id)
-      saved = @store.update(id) { |r| r.merge("summary" => summary(r).merge("payment_status" => "応答不明・照会待ち",
-        "receipt_status" => "未確認", "reason" => "通信が時間切れになりました。同じ購入IDと原文を保持しています。状態を照会・復旧してください。")) }
+      saved = @store.update(id) { |r| r.merge("summary" => summary(r).merge("payment_status" => "response_unknown",
+        "receipt_status" => "unverified", "reason" => "response_timeout")) }
       {"summary" => summary(saved)}
     end
   end

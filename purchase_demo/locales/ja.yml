@@ -1,0 +1,143 @@
+{
+  "ja": {
+    "purchase": {
+      "ui": {
+        "page_title": "Tea Purchase Lab · 購入委任デモ",
+        "brand_description": "購入委任の検証環境",
+        "language": "表示言語",
+        "test_only": "テスト専用 · 実課金なし",
+        "eyebrow": "購入者 → Agent → 販売者",
+        "headline_first": "任せる条件は、あなたが決める。",
+        "headline_second": "実行の証拠は、一段ずつ確かめる。",
+        "intro": "お茶の購入を題材に、承認から模擬決済・Receipt確認までを追うデモです。検証に成功しただけでは購入完了になりません。実店舗への注文やカードへの請求は一切行いません。",
+        "approval_section": "01 / 購入者の承認",
+        "approval_title": "購入条件を確認・承認",
+        "product": "お茶",
+        "product_symbol": "茶",
+        "merchant_currency": "販売者：Tea Shop · 通貨：JPY",
+        "quantity": "承認する数量",
+        "bags": "袋",
+        "budget": "支払上限",
+        "approval_explainer": "承認するのは商品・数量・上限金額です。Agentが後から受け取る販売者の提示は、この条件に照らして検証されます。",
+        "scenario": "試すシナリオ",
+        "consent": "Tea Shopでお茶3袋を、合計3,000円（JPY）以内で購入する条件を確認し、この模擬購入を明示的に承認します。",
+        "approve": "この条件で承認する",
+        "approval_only": "承認だけでは実行しません。次の画面でAgentの実行を開始します。",
+        "result_section": "02 / 実行と証拠",
+        "result_title": "購入の現在地",
+        "purchase_id": "購入ID（再実行・復旧でも同じID）",
+        "current_approval": "現在の承認：お茶3袋 / 上限3,000円（JPY）",
+        "current_scenario": "シナリオ：%{scenario}",
+        "offer": "販売者の提示：%{quantity} 袋 / %{amount} %{currency}",
+        "pending": "未取得",
+        "unknown_scenario": "不明なシナリオ",
+        "execution_count": "模擬決済の実行回数",
+        "executions": "実行 %{count} 回",
+        "run": "Agent実行 / 同じ購入を再実行",
+        "recover": "保存済み結果で復旧",
+        "refresh": "状態を更新",
+        "recovery_warning": "応答が途切れても、新しい購入を作らず同じIDで確認してください。Receipt未確認の状態を、購入完了として扱わないでください。",
+        "empty_title": "まだ購入を承認していません",
+        "empty_description": "条件を確認して承認すると、4つの段階と実行回数がここに表示されます。",
+        "not_performed": "未実施",
+        "roles_section": "03 / 信頼の境界",
+        "roles_title": "3つの役割、別々の責任",
+        "authority_label": "購入者の承認主体",
+        "authority_title": "購入者の承認を保持",
+        "authority_description": "購入条件と明示的な承認を記録し、委任を発行します。画面上の承認が出発点です。",
+        "buyer_label": "購入Agent",
+        "buyer_title": "条件内の購入を進める",
+        "buyer_description": "販売者の提示を受け取り、承認された範囲で購入データを組み立てます。",
+        "merchant_label": "販売者 / ホスト",
+        "merchant_title": "検証して実行を判断",
+        "merchant_description": "販売者側の注文と照合し、重複を防いで模擬決済を実行します。結果をReceiptで返します。",
+        "limitations_title": "技術的な境界と、このデモの制約",
+        "limitations": "AP2の暗号検証、アプリ側の実行制御、模擬決済、Receiptの検証は独立した段階です。Receipt確認まで含む状態を見て結果を判断します。ローカルのテスト環境であり、本番の本人認証・カード決済サービスではありません。",
+        "privacy": "秘密鍵、nonce、署名付きデータの全文は画面やRailsログに表示しません。このブラウザで承認した購入だけを表示します。",
+        "history": "このブラウザの購入履歴",
+        "footer": "ローカル専用 / 合成データのみ / 実際の購入・送金・課金は発生しません",
+        "unknown_status": "不明な状態・保存済み結果を確認してください",
+        "unknown_reason": "この保存済み結果に対応する説明はありません。操作前に各段階の状態を確認してください。"
+      },
+      "statuses": {
+        "not_run": "未実行",
+        "approved": "明示承認済み",
+        "approved_pending": "承認済み・未受理",
+        "not_started": "未開始",
+        "unverified": "未確認",
+        "issuance_refused": "条件不一致・発行拒否",
+        "rejected": "拒否",
+        "not_accepted": "拒否・未受理",
+        "verified": "検証成功",
+        "unknown": "状態不明",
+        "accepted_no_retry": "永続受理済み・再実行不可",
+        "lookup_required": "状態照会が必要・再実行禁止",
+        "reservation_held": "実行拒否・受理予約保持",
+        "mock_success": "模擬成功",
+        "mock_error": "模擬失敗",
+        "mock_success_verified": "模擬成功（Receipt確認済み）",
+        "mock_error_verified": "模擬失敗（Error確認済み）",
+        "unconfirmed_no_retry": "成功未確認・再決済禁止",
+        "unconfirmed_pending": "成功未確認・照会待ち",
+        "response_unknown": "応答不明・照会待ち",
+        "receipt_success": "真正なSuccess・購入成功通知",
+        "receipt_error": "真正なError・購入成功ではない",
+        "receipt_rejected": "拒否・この購入の真正なReceiptではない"
+      },
+      "reasons": {
+        "approval_saved": "承認を保存しました。購入Agentを実行してください。",
+        "authority_unreachable": "応答を確認できません。同じ購入IDの状態を照会してください。新しい購入許可は発行しません。",
+        "checkout_refused": "Checkoutの署名・数量・承認条件・有効期限の確認に失敗し、発行を拒否しました。",
+        "payment_refused": "Paymentの署名・予算・承認条件・有効期限の確認に失敗し、発行を拒否しました。",
+        "receipt_rejected": "Receiptの署名または取引ID・元のPaymentとの結合が一致しません。購入成功として扱わず、再決済もしません。",
+        "purchase_complete": "承認条件、AP2検証、永続受理、模擬決済、購入側のReceipt確認が完了しました。実際のお金は動いていません。",
+        "payment_failed": "Error Receiptの署名は真正ですが、模擬決済は失敗です。同じ承認を再利用して決済しません。",
+        "response_timeout": "通信が時間切れになりました。同じ購入IDと原文を保持しています。状態を照会・復旧してください。",
+        "ap2_rejected": "AP2が署名・承認条件・注文の結合を拒否しました。",
+        "application_rejected": "現在の承認・数量・予算・注文状態が実行条件を満たしません。",
+        "approval_changed": "承認の現在状態が変わったため開始しません。受理予約は保持します。",
+        "binding_mismatch": "署名・原文・注文との結合が一致しません。",
+        "result_saved": "保存された模擬決済結果を返しました。購入側のReceipt確認が必要です。",
+        "purchase_retained": "同じ購入IDの状態を保持しています。新しい支払い許可は発行しません。"
+      },
+      "scenarios": {
+        "valid": "正常系：お茶3袋・2,400円（JPY）",
+        "budget": "上限超過：3,600円（JPY）の提示",
+        "quantity": "数量違反：2袋の提示",
+        "tampered": "改ざんされた購入データ",
+        "error": "模擬決済がエラーを返す",
+        "timeout": "模擬決済後に応答が途切れる",
+        "wrong_receipt": "別の購入のReceipt",
+        "invalid_receipt": "署名が不正なReceipt"
+      },
+      "flash": {
+        "approval_required": "商品・数量・上限金額を確認して承認してください。",
+        "approval_saved": "この条件で購入を承認しました。実行はまだ開始していません。",
+        "approval_failed": "承認を保存できませんでした。状態を確認してから再度お試しください。",
+        "run_failed": "実行結果を確認できませんでした。再実行前に状態を更新してください。",
+        "recovered": "保存済みの結果を照会しました。各段階の状態をご確認ください。",
+        "recovery_failed": "復旧照会を完了できませんでした。購入IDを維持して再度確認してください。",
+        "expired_form": "フォームの有効期限が切れました。画面を再読み込みしてください。",
+        "unknown": "以前のメッセージを確認できません。次の操作の前に、現在の購入状態を確認してください。"
+      },
+      "stages": {
+        "ap2": {
+          "title": "AP2検証",
+          "description": "署名・購入条件・支払条件を検証します。"
+        },
+        "app": {
+          "title": "アプリの実行判断",
+          "description": "アプリ側で重複実行と状態を確認します。"
+        },
+        "payment": {
+          "title": "模擬決済の結果",
+          "description": "テスト用決済処理の結果です。実課金はありません。"
+        },
+        "receipt": {
+          "title": "Receipt確認",
+          "description": "署名と、この購入に結び付く結果かを確認します。"
+        }
+      }
+    }
+  }
+}
