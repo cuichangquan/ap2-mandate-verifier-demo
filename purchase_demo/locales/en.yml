@@ -117,7 +117,8 @@
         "run_failed": "The execution result could not be confirmed. Refresh status before retrying.",
         "recovered": "The saved result was requested. Check the status of each stage.",
         "recovery_failed": "Recovery could not be completed. Keep the same purchase ID and check again.",
-        "expired_form": "This form has expired. Reload the page and try again."
+        "expired_form": "This form has expired. Reload the page and try again.",
+        "unknown": "A previous message could not be identified. Check the current purchase status before taking further action."
       },
       "stages": {
         "ap2": {

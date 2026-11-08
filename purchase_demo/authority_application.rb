@@ -41,7 +41,18 @@ end
 
 class PurchaseAuthorityController < ActionController::Base
   SCENARIOS = PurchaseDemo::SCENARIOS
-  helper_method :purchase_text, :purchase_path, :language_path, :status_text, :reason_text
+  FLASH_CODES = %w[approval_required approval_saved approval_failed run_failed recovered recovery_failed].freeze
+  # Pending cookies from the previous UI may contain sentences instead of codes.
+  # Translate exact known messages for display only; normal flash expiry is kept.
+  LEGACY_FLASH = {
+    "商品・数量・上限金額を確認して承認してください。" => "approval_required",
+    "この条件で購入を承認しました。実行はまだ開始していません。" => "approval_saved",
+    "承認を保存できませんでした。状態を確認してから再度お試しください。" => "approval_failed",
+    "実行結果を確認できませんでした。再実行前に状態を更新してください。" => "run_failed",
+    "保存済みの結果を照会しました。各段階の状態をご確認ください。" => "recovered",
+    "復旧照会を完了できませんでした。購入IDを維持して再度確認してください。" => "recovery_failed"
+  }.freeze
+  helper_method :purchase_text, :purchase_path, :language_path, :status_text, :reason_text, :flash_text
   prepend_view_path File.expand_path("views", __dir__)
   protect_from_forgery with: :exception
   prepend_around_action :with_locale
@@ -135,6 +146,11 @@ class PurchaseAuthorityController < ActionController::Base
   def reason_text(value)
     code = PurchaseDemo::SummaryCodes.reason(value)
     code ? purchase_text("reasons.#{code}") : purchase_text("ui.unknown_reason")
+  end
+
+  def flash_text(value)
+    code = FLASH_CODES.include?(value) ? value : LEGACY_FLASH[value]
+    purchase_text("flash.#{code || 'unknown'}")
   end
 
   def valid_id?(id)

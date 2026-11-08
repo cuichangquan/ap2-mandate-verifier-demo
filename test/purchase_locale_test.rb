@@ -266,6 +266,58 @@ class PurchaseLocaleTest < PurchaseUITest
     assert_equal 0, @service.records.fetch(id).fetch("execution_count")
   end
 
+  def test_pending_cookie_flash_is_localized_consumed_once_and_never_changes_purchases
+    id, = approved_page
+    original_records = Marshal.dump(@service.records)
+    original_calls = @service.calls.dup
+    @service.status_calls.clear
+    current = PurchaseAuthorityController::FLASH_CODES.to_h { |code| [code, code] }
+    legacy = {
+      "商品・数量・上限金額を確認して承認してください。" => "approval_required",
+      "この条件で購入を承認しました。実行はまだ開始していません。" => "approval_saved",
+      "承認を保存できませんでした。状態を確認してから再度お試しください。" => "approval_failed",
+      "実行結果を確認できませんでした。再実行前に状態を更新してください。" => "run_failed",
+      "保存済みの結果を照会しました。各段階の状態をご確認ください。" => "recovered",
+      "復旧照会を完了できませんでした。購入IDを維持して再度確認してください。" => "recovery_failed"
+    }
+    unknown = {"不明な過去のメッセージ" => "unknown", '<script>PRIVATE_FLASH_VALUE</script>' => "unknown",
+      "missing.flash.key" => "unknown"}
+    LOCALES.each do |locale|
+      current.merge(legacy).merge(unknown).each do |value, code|
+        # Seed one pending flash through Rails' actual encrypted CookieStore.
+        # The subsequent request receives only that cookie, never an injected
+        # flash hash, matching an old cookie surviving an application upgrade.
+        seed_pending_flash = true
+        app = lambda do |env|
+          if seed_pending_flash
+            env["action_dispatch.request.flash_hash"] = ActionDispatch::Flash::FlashHash.new(
+              "notice" => value, "alert" => value)
+            seed_pending_flash = false
+          end
+          PurchaseDemo::AuthorityApplication.call(env)
+        end
+        browser = Browser.new(app)
+        browser.instance_variable_set(:@cookie, @browser.cookie)
+        seeded = browser.get("/purchases/#{id}")
+        assert_equal 200, seeded.status
+        refute_nil seeded["set-cookie"]
+        response = browser.get("/purchases/#{id}?locale=#{locale}")
+        assert_locale(response, locale)
+        expected = CGI.escapeHTML(translated("flash.#{code}", locale))
+        assert_includes response.body, %(<div class="notice" role="status">#{expected}</div>)
+        assert_includes response.body, %(<div class="notice alert" role="alert">#{expected}</div>)
+        refute_includes response.body, CGI.escapeHTML(value) if locale == "en" || unknown.key?(value) || current.key?(value)
+        refute_match(/translation missing/i, response.body)
+        refute_includes response.body, "PRIVATE_FLASH_VALUE"
+        consumed = browser.get("/purchases/#{id}?locale=#{locale}")
+        refute_match(/<div class="notice(?: alert)?" role="(?:status|alert)">/, consumed.body)
+        assert_equal original_records, Marshal.dump(@service.records)
+        assert_equal original_calls, @service.calls
+        assert_empty @service.status_calls
+      end
+    end
+  end
+
   def test_mobile_markup_keeps_headline_and_history_text_separate
     LOCALES.each do |locale|
       id, page = approved_page(locale)

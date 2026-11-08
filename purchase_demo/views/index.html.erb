@@ -23,8 +23,8 @@
   <p class="eyebrow"><%= purchase_text("ui.eyebrow") %></p>
   <h1><%= purchase_text("ui.headline_first") %><br> <%= purchase_text("ui.headline_second") %></h1>
   <p class="intro"><%= purchase_text("ui.intro") %></p>
-  <% if flash[:notice] %><div class="notice" role="status"><%= purchase_text("flash.#{flash[:notice]}") %></div><% end %>
-  <% if flash[:alert] %><div class="notice alert" role="alert"><%= purchase_text("flash.#{flash[:alert]}") %></div><% end %>
+  <% if flash[:notice] %><div class="notice" role="status"><%= flash_text(flash[:notice]) %></div><% end %>
+  <% if flash[:alert] %><div class="notice alert" role="alert"><%= flash_text(flash[:alert]) %></div><% end %>
   <div class="grid">
     <section class="card" aria-labelledby="approval-title">
       <div class="section-label"><%= purchase_text("ui.approval_section") %></div><h2 id="approval-title"><%= purchase_text("ui.approval_title") %></h2>
