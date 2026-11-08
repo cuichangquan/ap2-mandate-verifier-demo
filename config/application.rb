@@ -13,7 +13,7 @@ module PurchaseDemo
     config.i18n.default_locale = :en
     # Bounded, local presentation snapshots: switching language never re-runs
     # verification/signing, and cookies contain only opaque snapshot IDs.
-    config.cache_store = :memory_store, { size: 16.megabytes }
+    config.cache_store = :memory_store, { size: 16 * 1024 * 1024 }
     config.secret_key_base = SecureRandom.hex(64)
     config.hosts = ["localhost", "127.0.0.1"]
     config.action_controller.allow_forgery_protection = true

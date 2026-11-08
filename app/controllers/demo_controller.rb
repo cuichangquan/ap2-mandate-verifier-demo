@@ -82,7 +82,7 @@ class DemoController < ActionController::Base
     previous_id = session[key]
     Rails.cache.delete(["demo-presentation", name, previous_id]) if previous_id
     id = SecureRandom.hex(24)
-    Rails.cache.write(["demo-presentation", name, id], value, expires_in: 30.minutes)
+    Rails.cache.write(["demo-presentation", name, id], value, expires_in: 30 * 60)
     session[key] = id
     value
   end
