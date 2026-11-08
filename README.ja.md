@@ -60,6 +60,10 @@ x86_64ホストでは`DEMO_ARCH=amd64`を選びます。**http://127.0.0.1:3000/
 
 **EvidenceもReceiptの真正性も、購入・決済の実行許可ではありません。** Receiptはアプリが通知した結果を認証します。真正なErrorは失敗であり、署名だけで精算完了を示すものではありません。通常画面では決済・実注文の更新・本番nonceの消費を行いません。
 
+![日本語の通常デモ。検証成功と、その結果が示す範囲](docs/images/standard-ja.jpg)
+
+*日本語の通常デモ。検証事実を示し、決済は実行しません。*
+
 ## A2A × AP2購入デモを起動する
 
 別のCompose構成で公開Gem`ap2_mandate_verifier 1.6.0`と`a2a-rails 0.3.0`を使います。どちらのGemも変更しません。authority・buyer・sellerは別プロセスで動き、Agent間はローカルの実HTTPSで通信します。
@@ -84,6 +88,10 @@ docker compose -f compose.purchase.yml down
 ```
 
 以降も同じ`COMPOSE_PROJECT_NAME`を設定します。通常の`down`はnamed volumeと購入データを保持します。保留中の購入の復旧のためにvolumeを削除しないでください。全リセットの影響は購入ガイドで説明しています。
+
+![日本語の購入デモ。四段階、真正なSuccess Receipt、模擬実行1回](docs/images/purchase-ja.jpg)
+
+*日本語の購入デモ。承認・四段階の結果・このブラウザの履歴を表示します。[両言語とスマートフォン表示を比較](docs/LOCALIZATION_VALIDATION.md#screen-comparison--画面比較)。*
 
 ## オフラインのRuby例を実行する
 

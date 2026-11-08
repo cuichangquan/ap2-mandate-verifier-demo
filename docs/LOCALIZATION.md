@@ -58,6 +58,7 @@ No destructive data migration or volume reset is needed for localization.
 - Newly produced summary status/reason fields use stable codes. Business decisions use codes and protocol state, not current translation text. Recognized historical values are normalized where they participate in an existing decision, preserving behavior after upgrade.
 - Unknown historical free text receives a conservative localized fallback. It is not guessed from substrings, treated as success or rendered as untrusted diagnostic text. Its original stored value remains intact.
 - Original approvals, offers, Mandates, Receipts, wire data, hashes and ledger records are not translated. Normal authorized workflow operations may still update their ordinary summary state; a display/language request does not.
+- Pending flash notifications in a session created before an upgrade use exact known-message mappings and an allowlist of current codes. Unknown text gets a localized fallback without exposing the raw value. Normal one-request flash consumption is unchanged, and translating a notification does not rewrite a purchase.
 
 When adding compatibility for another historical value, add only its exact, known mapping and a fixture test. Do not broadly replace Japanese text in the database. Test both displayed languages and assert that reading/translation leaves the saved record and original signed bytes unchanged.
 

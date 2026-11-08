@@ -60,6 +60,10 @@ The standard demo uses host port 3000 and the purchase demo uses 3100, so they c
 
 **Evidence and Receipt authenticity are not permission to execute a purchase or payment.** A Receipt authenticates an application's reported outcome. An authentic Error is still a failure; a valid signature alone does not establish settlement. These standard screens do not execute payments, update real orders or consume production nonces.
 
+![English standard demo showing a successful verification and its limited meaning](docs/images/standard-en.jpg)
+
+*Standard demo in English: verification facts, not payment execution.*
+
 ## Run the A2A × AP2 purchase demo
 
 This separate Compose stack uses published `ap2_mandate_verifier 1.6.0` and `a2a-rails 0.3.0` without modifying either gem. Authority, buyer and seller run in separate processes; agent communication uses real local HTTPS.
@@ -84,6 +88,10 @@ docker compose -f compose.purchase.yml down
 ```
 
 Ordinary `down` preserves the named volumes and purchase data. Do not delete volumes to recover a pending purchase. Full-reset consequences are explained in the purchase guide.
+
+![English purchase demo showing the four stages, verified Success Receipt and one mock execution](docs/images/purchase-en.jpg)
+
+*Purchase demo in English: approval, four result stages and browser-owned history. [Compare both languages and mobile layouts](docs/LOCALIZATION_VALIDATION.md#screen-comparison--画面比較).*
 
 ## Run the offline Ruby examples
 
