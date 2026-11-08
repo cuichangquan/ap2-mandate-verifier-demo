@@ -266,6 +266,18 @@ class PurchaseLocaleTest < PurchaseUITest
     assert_equal 0, @service.records.fetch(id).fetch("execution_count")
   end
 
+  def test_mobile_markup_keeps_headline_and_history_text_separate
+    LOCALES.each do |locale|
+      id, page = approved_page(locale)
+      headline = page.body[/<h1>(.*?)<\/h1>/m, 1]
+      assert_includes headline, "<br> "
+      assert_equal "#{translated('ui.headline_first', locale)} #{translated('ui.headline_second', locale)}",
+        CGI.unescapeHTML(headline.gsub("<br>", ""))
+      assert_match(/@media\(max-width:800px\).*?\.history li>span\{display:block\}/m, page.body)
+      assert_match(%r{<li><a[^>]+>#{Regexp.escape(id)}</a><span>}, page.body)
+    end
+  end
+
   def test_translation_catalogs_have_identical_nonempty_keys_and_interpolations
     flatten = lambda do |value, path = [], result = {}|
       value.each do |key, child|
