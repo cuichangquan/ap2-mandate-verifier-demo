@@ -94,13 +94,13 @@ class PurchaseRuntimeTest < Minitest::Test
   def test_full_roles_success_retry_and_reopen_preserve_first_wire
     id = approve
     first = run_purchase(id)
-    assert_equal "真正なSuccess・購入成功通知", first.fetch("receipt_status")
+    assert_equal "receipt_success", first.fetch("receipt_status")
     assert_equal 1, count(id)
     wires = @stores.fetch("buyer").read(id).fetch("wires")
     reopen
     @clock += 601 # Lookup/reconciliation remains possible after Mandate expiry.
     status = @roles.fetch("authority").status(id: id)
-    assert_equal "真正なSuccess・購入成功通知", status.fetch("receipt_status")
+    assert_equal "receipt_success", status.fetch("receipt_status")
     run_purchase(id)
     assert wires == @stores.fetch("buyer").read(id).fetch("wires"), "first signed originals changed"
     assert_equal 1, count(id)
@@ -138,18 +138,18 @@ class PurchaseRuntimeTest < Minitest::Test
       id = approve(scenario)
       output = run_purchase(id)
       assert_equal 0, count(id), scenario
-      assert_equal "未開始", output.fetch("payment_status"), scenario
-      refute_equal "真正なSuccess・購入成功通知", output.fetch("receipt_status"), scenario
+      assert_equal "not_started", output.fetch("payment_status"), scenario
+      refute_equal "receipt_success", output.fetch("receipt_status"), scenario
     end
   end
 
   def test_error_and_invalid_receipts_do_not_become_buyer_success
-    {"error" => "真正なError・購入成功ではない", "wrong_receipt" => "拒否・この購入の真正なReceiptではない",
-      "invalid_receipt" => "拒否・この購入の真正なReceiptではない"}.each do |scenario, expected|
+    {"error" => "receipt_error", "wrong_receipt" => "receipt_rejected",
+      "invalid_receipt" => "receipt_rejected"}.each do |scenario, expected|
       id = approve(scenario)
       result = run_purchase(id)
       assert_equal expected, result.fetch("receipt_status")
-      refute_includes result.fetch("payment_status"), "模擬成功"
+      refute_includes result.fetch("payment_status"), "mock_success"
       run_purchase(id)
       assert_equal 1, count(id)
     end
@@ -158,11 +158,11 @@ class PurchaseRuntimeTest < Minitest::Test
   def test_timeout_reconciliation_after_reopen_never_reexecutes
     id = approve("timeout")
     result = run_purchase(id) # Actual seller branch sleeps; fake transport does not time out.
-    assert_equal "未確認", result.fetch("receipt_status")
+    assert_equal "unverified", result.fetch("receipt_status")
     assert_equal 1, count(id)
     reopen
     result = @roles.fetch("authority").recover(id: id)
-    assert_equal "真正なSuccess・購入成功通知", result.fetch("receipt_status")
+    assert_equal "receipt_success", result.fetch("receipt_status")
     assert_equal 1, count(id)
   end
 
@@ -261,7 +261,7 @@ class PurchaseRuntimeTest < Minitest::Test
       end
       refute AP2MandateVerifier::Payment.verify(**inputs).verified?
       result = seller.call("purchase", {"purchase_id" => id, "wires" => wires})
-      assert_equal "拒否", result.fetch("summary").fetch("ap2_status")
+      assert_equal "rejected", result.fetch("summary").fetch("ap2_status")
       assert_equal 0, count(id)
       assert_nil @stores.fetch("seller").processor(id)
     end
@@ -273,16 +273,16 @@ class PurchaseRuntimeTest < Minitest::Test
     @stores.fetch("buyer").update(id) { |r| r.merge("wires" => wires) }
     buyer = @roles.fetch("buyer")
     row = @stores.fetch("buyer").read(id)
-    misleading = {"summary" => {"ap2_status" => "検証成功", "app_status" => "永続受理済み・再実行不可",
-      "payment_status" => "模擬成功", "execution_count" => 1, "reason" => "success claimed"}}
+    misleading = {"summary" => {"ap2_status" => "verified", "app_status" => "accepted_no_retry",
+      "payment_status" => "mock_success", "execution_count" => 1, "reason" => "success claimed"}}
     output = buyer.consume(row, misleading)
-    refute_includes output.fetch("summary").fetch("payment_status"), "模擬成功"
-    assert_equal "未確認", output.fetch("summary").fetch("receipt_status")
+    refute_includes output.fetch("summary").fetch("payment_status"), "mock_success"
+    assert_equal "unverified", output.fetch("summary").fetch("receipt_status")
     error = D::Protocol.receipt(closed_sd_jwt: wires.fetch("payment_closed"), payment_id: id,
       outcome: "Error", merchant_key: @private.fetch("seller"), now: @clock)
     output = buyer.consume(row, misleading.merge("receipt_jwt" => error))
-    assert_includes output.fetch("summary").fetch("payment_status"), "模擬失敗"
-    assert_equal "真正なError・購入成功ではない", output.fetch("summary").fetch("receipt_status")
+    assert_includes output.fetch("summary").fetch("payment_status"), "mock_error"
+    assert_equal "receipt_error", output.fetch("summary").fetch("receipt_status")
   end
 
   class FinishUnavailableSeller < LocalSeller
@@ -304,8 +304,8 @@ class PurchaseRuntimeTest < Minitest::Test
     result = faulty.call("purchase", {"purchase_id" => id, "wires" => buyer_wires(id)})
     assert_equal 1, count(id)
     assert_equal "unavailable", result.fetch("acceptance_state")
-    refute_equal "未開始", result.fetch("summary").fetch("payment_status")
-    refute_equal "承認済み・未受理", result.fetch("summary").fetch("app_status")
+    refute_equal "not_started", result.fetch("summary").fetch("payment_status")
+    refute_equal "approved_pending", result.fetch("summary").fetch("app_status")
     reopen
     recovered = @roles.fetch("seller").recover(id)
     assert_equal "receipt_success", recovered.fetch("acceptance_state")
@@ -336,9 +336,9 @@ class PurchaseRuntimeTest < Minitest::Test
     assert AP2MandateVerifier::Payment.verify(**seller.verification(row, wires)).verified?, "fixture must pass complete AP2 verification"
     @stores.fetch("seller").update(id) { |record| record.merge("active" => false) }
     result = seller.call("purchase", {"purchase_id" => id, "wires" => wires})
-    assert_equal "検証成功", result.fetch("summary").fetch("ap2_status")
-    assert_equal "拒否・未受理", result.fetch("summary").fetch("app_status")
-    assert_equal "未開始", result.fetch("summary").fetch("payment_status")
+    assert_equal "verified", result.fetch("summary").fetch("ap2_status")
+    assert_equal "not_accepted", result.fetch("summary").fetch("app_status")
+    assert_equal "not_started", result.fetch("summary").fetch("payment_status")
     assert_equal 0, count(id)
   end
 
@@ -356,10 +356,63 @@ class PurchaseRuntimeTest < Minitest::Test
     end.new(local_dir: @dirs.fetch("seller"), local_key: @private.fetch("seller"), local_public: @public,
       store: @stores.fetch("seller"), clock: -> { @clock })
     result = changed_seller.call("purchase", {"purchase_id" => id, "wires" => wires})
-    assert_equal "実行拒否・受理予約保持", result.fetch("summary").fetch("app_status")
+    assert_equal "reservation_held", result.fetch("summary").fetch("app_status")
     assert_equal 0, count(id)
     # Reservation is retained rather than returned as a new permission.
     assert_equal "pending", @roles.fetch("seller").status(id).fetch("acceptance_state")
+  end
+
+  def test_legacy_saved_summaries_are_projected_without_rewriting_originals
+    id = approve
+    run_purchase(id)
+    codes = D::SummaryCodes
+    @stores.each_value do |store|
+      store.update(id) do |row|
+        legacy = row.fetch("summary", {}).transform_values { |value| value }
+        codes::STATUS_FIELDS.each do |field|
+          code = legacy[field]
+          legacy[field] = codes::LEGACY_STATUSES.key(code) || code if code
+        end
+        legacy["reason"] = codes::LEGACY_REASONS.key(legacy["reason"]) || legacy["reason"] if legacy["reason"]
+        row.merge("summary" => legacy)
+      end
+    end
+    originals = @stores.transform_values { |store| store.read(id) }
+    wires = originals.fetch("buyer").fetch("wires")
+    3.times do
+      output = @roles.fetch("authority").list.find { |item| item.fetch("purchase_id") == id }
+      assert_equal "receipt_success", output.fetch("receipt_status")
+      assert_equal "purchase_complete", output.fetch("reason")
+      assert_equal 1, output.fetch("execution_count")
+      @stores.each { |role, store| assert_equal originals.fetch(role), store.read(id), "read changed #{role} record" }
+    end
+    # Existing proofs and the durable payment decision, not a translated label,
+    # continue to prevent another execution when this legacy purchase is retried.
+    result = run_purchase(id)
+    assert_equal "receipt_success", result.fetch("receipt_status")
+    assert_equal 1, count(id)
+    assert_equal wires, @stores.fetch("buyer").read(id).fetch("wires")
+    assert_equal originals.fetch("authority").fetch("approval"), @stores.fetch("authority").read(id).fetch("approval")
+  end
+
+  def test_legacy_not_started_is_recognized_without_trusting_unverified_success
+    id = approve
+    buyer = @roles.fetch("buyer")
+    legacy = {"summary" => {"ap2_status" => "拒否", "app_status" => "拒否・未受理",
+      "payment_status" => "未開始", "execution_count" => 0,
+      "reason" => "AP2が署名・承認条件・注文の結合を拒否しました。"}}
+    original = Marshal.dump(legacy)
+    result = buyer.consume(@stores.fetch("buyer").read(id), legacy).fetch("summary")
+    assert_equal "not_started", result.fetch("payment_status")
+    assert_equal "unverified", result.fetch("receipt_status")
+    assert_equal "ap2_rejected", result.fetch("reason")
+    assert_equal original, Marshal.dump(legacy)
+    assert_equal 0, count(id)
+    legacy.fetch("summary")["payment_status"] = "模擬成功"
+    result = buyer.consume(@stores.fetch("buyer").read(id), legacy).fetch("summary")
+    assert_equal "unconfirmed_pending", result.fetch("payment_status")
+    assert_equal "unverified", result.fetch("receipt_status")
+    assert_equal 0, count(id)
   end
 
   def test_ui_projection_excludes_keys_nonces_and_signed_wires

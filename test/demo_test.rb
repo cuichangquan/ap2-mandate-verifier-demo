@@ -13,7 +13,7 @@ class DemoTest < Minitest::Test
     assert_includes response.body, Gem.loaded_specs.fetch("ap2_mandate_verifier").version.to_s
     assert_includes response.body, "Success"
     assert_includes response.body, "Error"
-    assert_includes response.body, "購入成功通知 false"
+    assert_includes response.body, "Purchase success reported: No"
     assert_equal "no-store", response.headers["cache-control"]
     assert_includes client.get("/", "HTTP_HOST" => "localhost").body, '/merchant'
     assert_equal 404, client.get("/merchant-candidate", "HTTP_HOST" => "localhost").status
@@ -32,7 +32,7 @@ class DemoTest < Minitest::Test
       assert_equal :rejected, expired.status
       assert_equal :invalid_purchase_time, expired.code
       refute expired.evidence_present
-      assert_includes expired.reason, "有効期間"
+      assert_equal "invalid_time", expired.reason_key
     end
   end
 
@@ -41,13 +41,13 @@ class DemoTest < Minitest::Test
     assert_equal :rejected, missing.status
     assert_equal :invalid_host_context, missing.code
     refute missing.evidence_present
-    assert_equal "order.currency", missing.diagnostic[:field]
-    assert_equal :missing_required_field, missing.diagnostic[:reason]
-    assert_equal :input_assembly, missing.diagnostic[:stage]
-    assert_includes missing.diagnostic[:hint], "必須項目"
-    assert_nil ScenarioVerifier.call("valid").diagnostic
-    assert_equal :host_binding, ScenarioVerifier.call("tampered").diagnostic[:stage]
-    assert_equal :invalid_purchase_time, ScenarioVerifier.call("expired").diagnostic[:reason]
+    assert_equal "order.currency", missing.diagnostics.fetch(:ja)[:field]
+    assert_equal :missing_required_field, missing.diagnostics.fetch(:ja)[:reason]
+    assert_equal :input_assembly, missing.diagnostics.fetch(:ja)[:stage]
+    assert_includes missing.diagnostics.fetch(:ja)[:hint], "必須項目"
+    assert_nil ScenarioVerifier.call("valid").diagnostics
+    assert_equal :host_binding, ScenarioVerifier.call("tampered").diagnostics.fetch(:ja)[:stage]
+    assert_equal :invalid_purchase_time, ScenarioVerifier.call("expired").diagnostics.fetch(:ja)[:reason]
   end
 
   def test_errors_do_not_expose_exception_or_evidence
@@ -55,14 +55,14 @@ class DemoTest < Minitest::Test
       result = ScenarioVerifier.call("valid")
       assert_equal :unavailable, result.status
       refute result.evidence_present
-      refute_includes result.reason, "sensitive"
+      assert_equal "unavailable", result.reason_key
     end
   end
 
   def test_page_and_real_post_with_csrf
     client = Rack::MockRequest.new(PurchaseDemo::Application)
     %w[valid tampered expired missing_currency valid].each do |scenario|
-      page = client.get("/", "HTTP_HOST" => "localhost")
+      page = client.get("/?locale=ja", "HTTP_HOST" => "localhost")
       assert_equal 200, page.status
       assert_includes page.body, Gem.loaded_specs.fetch("ap2_mandate_verifier").version.to_s
       assert_includes page.body, "入力組み立て支援"
@@ -75,6 +75,9 @@ class DemoTest < Minitest::Test
       result = client.post("/verify", "HTTP_HOST" => "localhost", "HTTP_COOKIE" => cookie,
         "HTTP_ORIGIN" => "http://localhost",
         params: {scenario: scenario, authenticity_token: token})
+      assert_equal 303, result.status
+      cookie = Array(result.headers["set-cookie"]).map { |c| c.split(";", 2).first }.join("; ")
+      result = client.get(URI(result.headers.fetch("location")).request_uri, "HTTP_HOST" => "localhost", "HTTP_COOKIE" => cookie)
       assert_equal 200, result.status
       expected_code = {"valid" => "scoped_research_verified", "tampered" => "host_binding_mismatch", "expired" => "invalid_purchase_time", "missing_currency" => "invalid_host_context"}.fetch(scenario)
       assert_includes result.body, expected_code

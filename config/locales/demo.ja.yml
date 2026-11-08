@@ -1,0 +1,90 @@
+ja:
+  demo:
+    page_title: 購入委任の検証デモ
+    heading: 購入委任を、検証してみる。
+    local_demo: ローカルデモ
+    language_label: 表示言語
+    navigation_label: デモのナビゲーション
+    home_link: 検証シナリオ
+    merchant_link: 販売者署名と成功・拒否Receiptを試す
+    multi_item_link: 複数商品・数量を試す
+    introduction:
+      label: はじめに
+      title: 初めての方へ
+      concepts: Checkoutは注文内容、Mandateは承認・委任、Receiptはアプリの結果通知です。まず下の正常例を検証し、改ざん・期限切れ・入力不足と比較してください。
+      next: 次に販売者署名とReceipt、複数商品の数量不足を試せます。真正なError Receiptも業務結果は拒否です。
+      examples_before: Payment・選択的開示・12か月の長期Openと予算超過は、
+      examples_link: READMEのRuby単体コマンド
+      examples_after: で体験できます。
+      boundary: 合成データのみ。検証成功は決済成功ではなく、SDKは実決済を実行しません。本人認証・同意・最新信頼情報は利用アプリの責任です。長期UTC月次profileはAP2汎用MONTHLY準拠を意味しません。
+    multi_item:
+      title: 複数商品・数量（公開済みGem、合成データ）
+      profile: '明示profile:'
+      explanation: コーヒー2個、お茶3個の許可条件で照合します。要件IDと明細IDは別です。
+      valid: 正常な複数明細
+      short: 2件目の数量不足
+      line: '%{product}：%{quantity}個 × %{price} cents（USD）'
+      total: 'USD合計: %{amount} cents'
+      products:
+        coffee: コーヒー
+        tea: お茶
+      boundary: 署名と全検証を通した後も、業務結果はアプリが決めます。真正なError Receiptは購入成功を意味しません。nonce消費・決済・注文更新は実行しません。
+    merchant:
+      title: 販売者署名とCheckout Receipt（合成データ）
+      checkout_hash: Checkoutハッシュ
+      reference: Mandate参照
+      boundary: 処理結果は利用アプリが明示します。Receiptの真正性検証は購入処理やMandate認可を実行しません。
+    receipt:
+      success: 成功通知
+      error: 拒否通知
+      authentic: Receiptの真正性
+      purchase_succeeded: 購入成功通知
+      purchase_rejected: 購入拒否通知
+      wrong_issuer: 別署名者を期待した検証
+    workflow: 入力組み立て支援：業務情報 → 発行前準備 → 保存・復元 → 現在状態 → 完全検証。独自JSONやハッシュはGemが組み立てます。
+    comparison: 同じ合成データを使い、正常・改ざん・期限切れ・通貨の渡し忘れの結果と診断を比較できます。
+    warning_title: 検証成功・Evidenceは購入許可ではありません。
+    warning_body: 実決済や注文更新は行いません。最終的な購入判断はHostの責任です。
+    choose_scenario: シナリオを選択
+    scenarios:
+      valid: 正常な購入内容
+      tampered: 購入内容を改ざん
+      expired: 有効期限切れ
+      missing_currency: 注文の通貨を渡し忘れる
+    verify_button: Gemで検証する
+    result:
+      titles:
+        verified: 検証成功
+        rejected: 拒否
+        unavailable: 検証不能
+      reasons:
+        verified: 業務情報から組み立てた入力が固定profileの検査を通過しました。
+        binding_mismatch: 購入内容と保存済みHost情報が一致しません。
+        invalid_time: 合成デモ時刻が有効期間の条件を満たしません。
+        rejected: 固定profileの検査条件を満たしません。
+        unavailable: 検証を完了できません。購入処理は行いません。
+      evidence: Evidence
+      evidence_present: あり（検証事実のみ）
+      evidence_absent: なし
+      gem_result: Gem結果
+      time: 合成デモ時刻（Unix秒）
+      unknown: 不明
+    diagnostic:
+      failed_check: 失敗した検査
+      field: 確認対象（特定可能な場合）
+      unidentified: 特定できません
+      reason: 機械判読理由
+      hint: 次の確認候補
+    boolean:
+      'true': はい
+      'false': いいえ
+    footer:
+      profile: '固定profile:'
+      synthetic: 信頼情報・注文・鍵はすべて合成fixtureです。実Issuerの信頼は示しません。
+      time: 通常時刻1800000000／期限切れ時刻1800000101。現在の実時刻ではありません。
+    snapshot_expired: 保存したデモ結果の期限が切れたか、サーバーが再起動しました。再実行はしていません。シナリオを選択するか、明示的にデモを再実行して新しい結果を作成してください。
+    rerun: このデモを再実行
+    errors:
+      invalid_scenario: 対応する検証シナリオを選択してください。
+      expired_form: フォームを確認できませんでした。ページを再読み込みして、もう一度お試しください。検証は実行していません。
+    snapshot_notice: これは保存したデモ結果であり、新たな認可確認ではありません。言語切替や再読み込みでは検証を再実行しません。結果はこのサーバープロセスで最大30分間保持します。

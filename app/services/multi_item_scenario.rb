@@ -84,7 +84,7 @@ module MultiItemScenario
         purchase_rejected: verified.purchase_rejected?}
     end if result.success? && !short_second
     {profile: PROFILE, lines: lines, amount: amount, status: result.status, code: result.code,
-      evidence_present: !result.evidence.nil?, diagnostic: result.diagnostic&.to_h(locale: :ja),
+      evidence_present: !result.evidence.nil?, diagnostics: result.diagnostic && %i[en ja].to_h { |locale| [locale, result.diagnostic.to_h(locale: locale)] },
       checkout_hash: signed.checkout_hash, rows: rows || []}
   end
   private_class_method :hash, :totals, :disclose, :marker

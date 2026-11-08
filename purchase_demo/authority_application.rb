@@ -11,6 +11,9 @@ module PurchaseDemo
     config.load_defaults 8.0
     config.root = File.expand_path("..", __dir__)
     config.eager_load = false
+    config.i18n.available_locales = [:en, :ja]
+    config.i18n.default_locale = :en
+    config.i18n.load_path += Dir[File.expand_path("locales/*.yml", __dir__)]
     config.secret_key_base = File.read(File.join(ENV.fetch("PURCHASE_STATE_DIR"), "session_secret")).strip
     config.hosts = ["localhost", "127.0.0.1"]
     config.session_store :cookie_store, key: "_tea_authority", httponly: true, same_site: :strict
@@ -37,18 +40,11 @@ module PurchaseDemo
 end
 
 class PurchaseAuthorityController < ActionController::Base
-  SCENARIOS = {
-    "valid" => "正常系：お茶3袋・2,400円",
-    "budget" => "上限超過：3,600円の提示",
-    "quantity" => "数量違反：2袋の提示",
-    "tampered" => "改ざんされた購入データ",
-    "error" => "模擬決済がエラーを返す",
-    "timeout" => "模擬決済後に応答が途切れる",
-    "wrong_receipt" => "別の購入のReceipt",
-    "invalid_receipt" => "署名が不正なReceipt"
-  }.freeze
+  SCENARIOS = PurchaseDemo::SCENARIOS
+  helper_method :purchase_text, :purchase_path, :language_path, :status_text, :reason_text
   prepend_view_path File.expand_path("views", __dir__)
   protect_from_forgery with: :exception
+  prepend_around_action :with_locale
   before_action :private_response
   before_action :owned_purchase!, only: [:show, :run_purchase, :recover]
   rescue_from ActionController::InvalidAuthenticityToken, with: :invalid_request
@@ -56,7 +52,7 @@ class PurchaseAuthorityController < ActionController::Base
   def index
     session[:draft_id] ||= SecureRandom.uuid
     @draft_id = session[:draft_id]
-    @scenarios = SCENARIOS
+    @scenarios = SCENARIOS.to_h { |code| [code, purchase_text("scenarios.#{code}")] }
     @purchases = cached_history
     render template: "index", layout: false
   end
@@ -64,8 +60,8 @@ class PurchaseAuthorityController < ActionController::Base
   def approve
     id = params[:draft_id].to_s
     unless session[:draft_id].present? && id == session[:draft_id] &&
-        params[:approved] == "1" && SCENARIOS.key?(params[:scenario].to_s)
-      return redirect_to "/", alert: "商品・数量・上限金額を確認して承認してください。", status: :see_other
+        params[:approved] == "1" && SCENARIOS.include?(params[:scenario].to_s)
+      return redirect_to purchase_path("/"), alert: "approval_required", status: :see_other
     end
     session[:approved_purchase_ids] = (Array(session[:approved_purchase_ids]) + [id]).uniq.last(20)
     purchase_id = PurchaseDemo::Runtime.authority.approve(id: id, scenario: params[:scenario].to_s)
@@ -73,32 +69,73 @@ class PurchaseAuthorityController < ActionController::Base
     raise "invalid purchase identifier" unless valid_id?(purchase_id)
     session[:approved_purchase_ids] = (Array(session[:approved_purchase_ids]) + [purchase_id]).uniq.last(20)
     session.delete(:draft_id)
-    redirect_to "/purchases/#{purchase_id}", notice: "この条件で購入を承認しました。実行はまだ開始していません。", status: :see_other
+    redirect_to purchase_path("/purchases/#{purchase_id}"), notice: "approval_saved", status: :see_other
   rescue StandardError
-    redirect_to "/", alert: "承認を保存できませんでした。状態を確認してから再度お試しください。", status: :see_other
+    redirect_to purchase_path("/"), alert: "approval_failed", status: :see_other
   end
 
   def show
-    @purchase = safe_status(params[:id])
+    # A language switch reads cached presentation data only. It must not
+    # contact Agents, reconcile state, approve, or execute a purchase.
+    @purchase = if params[:refresh] == "1"
+      safe_status(params[:id])
+    else
+      cached_history.find { |purchase| purchase["purchase_id"] == params[:id] }
+    end
     return head :not_found unless @purchase
     index
   end
 
   def run_purchase
     PurchaseDemo::Runtime.authority.run(id: params[:id])
-    redirect_to "/purchases/#{params[:id]}", status: :see_other
+    redirect_to purchase_path("/purchases/#{params[:id]}"), status: :see_other
   rescue StandardError
-    redirect_to "/purchases/#{params[:id]}", alert: "実行結果を確認できませんでした。再実行前に状態を更新してください。", status: :see_other
+    redirect_to purchase_path("/purchases/#{params[:id]}"), alert: "run_failed", status: :see_other
   end
 
   def recover
     PurchaseDemo::Runtime.authority.recover(id: params[:id])
-    redirect_to "/purchases/#{params[:id]}", notice: "保存済みの結果を照会しました。各段階の状態をご確認ください。", status: :see_other
+    redirect_to purchase_path("/purchases/#{params[:id]}"), notice: "recovered", status: :see_other
   rescue StandardError
-    redirect_to "/purchases/#{params[:id]}", alert: "復旧照会を完了できませんでした。購入IDを維持して再度確認してください。", status: :see_other
+    redirect_to purchase_path("/purchases/#{params[:id]}"), alert: "recovery_failed", status: :see_other
   end
 
   private
+
+  def selected_locale
+    candidate = params.key?(:locale) ? params[:locale] : session[:locale]
+    %w[en ja].include?(candidate) ? candidate : "en"
+  end
+
+  def with_locale(&action)
+    locale = selected_locale
+    session[:locale] = locale
+    I18n.with_locale(locale, &action)
+  end
+
+  def purchase_text(key, **values)
+    I18n.t("purchase.#{key}", **values)
+  end
+
+  def purchase_path(path, locale: I18n.locale)
+    "#{path}?#{Rack::Utils.build_query(locale: locale)}"
+  end
+
+  def language_path(locale)
+    # Construct only a safe GET destination, never the current POST endpoint.
+    path = @purchase ? "/purchases/#{@purchase.fetch('purchase_id')}" : "/"
+    purchase_path(path, locale: locale)
+  end
+
+  def status_text(value)
+    code = PurchaseDemo::SummaryCodes.status(value)
+    code ? purchase_text("statuses.#{code}") : purchase_text("ui.unknown_status")
+  end
+
+  def reason_text(value)
+    code = PurchaseDemo::SummaryCodes.reason(value)
+    code ? purchase_text("reasons.#{code}") : purchase_text("ui.unknown_reason")
+  end
 
   def valid_id?(id)
     id.is_a?(String) && id.match?(/\A[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\z/i)
@@ -113,7 +150,10 @@ class PurchaseAuthorityController < ActionController::Base
   end
 
   def invalid_request
-    render plain: "フォームの有効期限が切れました。画面を再読み込みしてください。", status: :unprocessable_entity
+    # rescue_from runs outside the locale callback when CSRF verification raises.
+    I18n.with_locale(selected_locale) do
+      render plain: purchase_text("flash.expired_form"), status: :unprocessable_entity
+    end
   end
 
   def cached_history

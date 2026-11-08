@@ -1,0 +1,104 @@
+en:
+  demo:
+    page_title: Purchase mandate verification demo
+    heading: Verify a purchase mandate.
+    local_demo: LOCAL DEMO
+    language_label: Display language
+    navigation_label: Demo navigation
+    home_link: Verification scenarios
+    merchant_link: Try merchant signatures and Success / Error Receipts
+    multi_item_link: Try multiple products and quantities
+    introduction:
+      label: Introduction
+      title: Start here
+      concepts: A Checkout describes an order, a Mandate represents approval or delegation, and a Receipt reports
+        an application outcome. Verify the valid example below, then compare tampering, expiration, and missing
+        input.
+      next: Next, try merchant signatures and Receipts, or a multi-item order with an insufficient quantity. An
+        authentic Error Receipt still reports a rejected business outcome.
+      examples_before: For Payment, selective disclosure, 12-month Open mandates, and budget-limit examples, see
+        the
+      examples_link: standalone Ruby commands in the README
+      examples_after: .
+      boundary: Synthetic data only. Successful verification is not a successful payment, and the SDK does not execute
+        real payments. Identity checks, consent, and current trust information remain the application’s responsibility.
+        The long-term UTC monthly profile does not imply general AP2 MONTHLY compliance.
+    multi_item:
+      title: Multiple products and quantities (published gem, synthetic data)
+      profile: 'Explicit profile:'
+      explanation: The approved requirements are 2 Coffee and 3 Tea. Requirement IDs and line-item IDs are separate.
+      valid: Valid multi-item order
+      short: Insufficient quantity for the second item
+      line: '%{product}: %{quantity} × %{price} cents (USD)'
+      total: 'USD total: %{amount} cents'
+      products:
+        coffee: Coffee
+        tea: Tea
+      boundary: Even after signatures and all verification checks pass, the application decides the business outcome.
+        An authentic Error Receipt does not mean the purchase succeeded. This demo does not consume a nonce, charge
+        a payment, or update an order.
+    merchant:
+      title: Merchant signatures and Checkout Receipts (synthetic data)
+      checkout_hash: Checkout hash
+      reference: Mandate reference
+      boundary: The application explicitly reports the processing outcome. Verifying a Receipt’s authenticity does
+        not execute a purchase or authorize a Mandate.
+    receipt:
+      success: Success reported
+      error: Rejection reported
+      authentic: Authentic Receipt
+      purchase_succeeded: Purchase success reported
+      purchase_rejected: Purchase rejection reported
+      wrong_issuer: Verified with a different expected issuer
+    workflow: 'Input assembly: business data → preparation → save and restore → current state → full verification.
+      The gem builds the protocol JSON and hashes.'
+    comparison: Compare results and diagnostics for valid, tampered, expired, and missing-currency inputs using
+      the same synthetic data.
+    warning_title: Successful verification and Evidence are not permission to purchase.
+    warning_body: No real payment or order update occurs. The Host is responsible for the final purchase decision.
+    choose_scenario: Choose a scenario
+    scenarios:
+      valid: Valid purchase details
+      tampered: Tampered purchase details
+      expired: Expired mandate
+      missing_currency: Missing order currency
+    verify_button: Verify with the gem
+    result:
+      titles:
+        verified: Verification passed
+        rejected: Rejected
+        unavailable: Verification unavailable
+      reasons:
+        verified: Inputs assembled from business data passed the checks for the fixed profile.
+        binding_mismatch: The purchase details do not match the saved Host information.
+        invalid_time: The synthetic demo time does not meet the validity-period requirements.
+        rejected: The input does not meet the checks for the fixed profile.
+        unavailable: Verification could not be completed. No purchase is executed.
+      evidence: Evidence
+      evidence_present: Present (verification facts only)
+      evidence_absent: Absent
+      gem_result: Gem result
+      time: Synthetic demo time (Unix seconds)
+      unknown: Unknown
+    diagnostic:
+      failed_check: Failed check
+      field: Field to inspect (if identifiable)
+      unidentified: Not identified
+      reason: Machine-readable reason
+      hint: Suggested next check
+    boolean:
+      'true': 'Yes'
+      'false': 'No'
+    footer:
+      profile: 'Fixed profile:'
+      synthetic: Trust information, orders, and keys are all synthetic fixtures. They do not establish trust in
+        a real Issuer.
+      time: 'Normal time: 1800000000 / expired time: 1800000101. These are not current real-world timestamps.'
+    snapshot_expired: The saved demo result has expired or the server restarted. It has not been run again. Choose
+      a scenario or explicitly run this demo again to create a new result.
+    rerun: Run this demo again
+    errors:
+      invalid_scenario: Choose a supported verification scenario.
+      expired_form: This form could not be verified. Reload the page and try again. No verification was run.
+    snapshot_notice: These are saved demonstration results, not a new authorization check. Switching language or
+      reloading does not rerun verification. Results are kept for up to 30 minutes in this server process.

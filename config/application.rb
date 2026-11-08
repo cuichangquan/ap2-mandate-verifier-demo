@@ -9,6 +9,11 @@ module PurchaseDemo
   class Application < Rails::Application
     config.load_defaults 8.0
     config.eager_load = false
+    config.i18n.available_locales = [:en, :ja]
+    config.i18n.default_locale = :en
+    # Bounded, local presentation snapshots: switching language never re-runs
+    # verification/signing, and cookies contain only opaque snapshot IDs.
+    config.cache_store = :memory_store, { size: 16.megabytes }
     config.secret_key_base = SecureRandom.hex(64)
     config.hosts = ["localhost", "127.0.0.1"]
     config.action_controller.allow_forgery_protection = true

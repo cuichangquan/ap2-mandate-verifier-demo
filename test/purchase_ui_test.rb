@@ -96,7 +96,7 @@ class PurchaseUITest < Minitest::Test
   end
 
   def form(response)
-    %w[authenticity_token draft_id].to_h do |name|
+    %w[authenticity_token draft_id locale].to_h do |name|
       value = response.body[/name="#{name}" value="([^"]+)"/, 1]
       [name, value && CGI.unescapeHTML(value)]
     end.merge("approved" => "1", "scenario" => "valid")
@@ -105,13 +105,13 @@ class PurchaseUITest < Minitest::Test
   def approve(browser = @browser, values = @form)
     response = browser.post("/approve", values)
     assert_equal 303, response.status
-    assert_equal "http://localhost/purchases/#{values.fetch('draft_id')}", response["location"]
+    assert_equal "http://localhost/purchases/#{values.fetch('draft_id')}?locale=#{values.fetch('locale', 'en')}", response["location"]
     response
   end
 
   def test_home_displays_fixed_consent_and_four_distinct_stages
     assert_equal 200, @home.status
-    ["お茶", "3,000", "AP2検証", "アプリの実行判断", "模擬決済の結果", "Receipt確認", "実課金なし"].each { |text| assert_includes @home.body, text }
+    ["Tea", "3,000", "AP2 verification", "Application execution decision", "Mock payment result", "Receipt verification", "No real charges"].each { |text| assert_includes @home.body, text }
     assert_match(/name="approved" value="1" required/, @home.body)
     refute_nil @form["draft_id"]
     refute_nil @form["authenticity_token"]
@@ -129,7 +129,7 @@ class PurchaseUITest < Minitest::Test
       @form.merge("scenario" => "external"), @form.merge("draft_id" => SecureRandom.uuid)].each do |values|
       response = @browser.post("/approve", values)
       assert_equal 303, response.status
-      assert_equal "http://localhost/", response["location"]
+      assert_equal "http://localhost/?locale=en", response["location"]
     end
     assert_empty @service.calls
   end
@@ -147,7 +147,7 @@ class PurchaseUITest < Minitest::Test
     assert_equal [[:approve, @form["draft_id"], "valid"]], @service.calls
     assert_equal 0, @service.records.fetch(@form["draft_id"])["execution_count"]
     repeated = @browser.post("/approve", @form)
-    assert_equal "http://localhost/", repeated["location"]
+    assert_equal "http://localhost/?locale=en", repeated["location"]
     assert_equal 1, @service.calls.length
   end
 
@@ -163,7 +163,7 @@ class PurchaseUITest < Minitest::Test
   def test_lost_service_response_keeps_ownership_and_same_draft_for_retry
     @service.lose_next_response = true
     response = @browser.post("/approve", @form)
-    assert_equal "http://localhost/", response["location"]
+    assert_equal "http://localhost/?locale=en", response["location"]
     home = @browser.get("/")
     assert_equal @form["draft_id"], form(home)["draft_id"]
     assert_equal 200, @browser.get("/purchases/#{@form['draft_id']}").status
@@ -178,7 +178,7 @@ class PurchaseUITest < Minitest::Test
     %w[run run recover].each do |action|
       response = @browser.post("#{path}/#{action}", {"authenticity_token" => token})
       assert_equal 303, response.status
-      assert_equal "http://localhost#{path}", response["location"]
+      assert_equal "http://localhost#{path}?locale=en", response["location"]
     end
     assert_equal [[:run, @form["draft_id"]], [:run, @form["draft_id"]], [:recover, @form["draft_id"]]], @service.calls.drop(1)
     assert_equal 1, @service.records.fetch(@form["draft_id"])["execution_count"]
@@ -206,16 +206,16 @@ class PurchaseUITest < Minitest::Test
       "purchase_id" => "forged-service-id", "nonce" => "HIDDEN_NONCE",
       "private_key" => "HIDDEN_KEY", "wire" => "HIDDEN_WIRE",
       "offer" => {"quantity" => 3, "amount" => 2400, "nonce" => "HIDDEN_NESTED"})
-    response = @browser.get("/purchases/#{id}")
+    response = @browser.get("/purchases/#{id}?refresh=1")
     assert_equal 200, response.status
-    assert_includes response.body, "&lt;script&gt;"
+    assert_includes response.body, "No translated explanation is available"
     refute_includes response.body, "<script>"
     %w[HIDDEN_NONCE HIDDEN_KEY HIDDEN_WIRE HIDDEN_NESTED forged-service-id].each { |secret| refute_includes response.body, secret }
     assert_includes response.body, "action=\"/purchases/#{id}/run\""
     assert_equal "no-store", response["cache-control"]
   end
 
-  def test_history_uses_only_cached_owned_summaries_and_show_fetches_once
+  def test_history_and_show_use_cached_owned_summaries_and_explicit_refresh_fetches_once
     approve
     first_id = @form.fetch("draft_id")
     second_form = form(@browser.get("/"))
@@ -237,6 +237,8 @@ class PurchaseUITest < Minitest::Test
     refute_includes home.body, "<script>"
 
     assert_equal 200, @browser.get("/purchases/#{second_id}").status
+    assert_empty @service.status_calls
+    assert_equal 200, @browser.get("/purchases/#{second_id}?refresh=1").status
     assert_equal [second_id], @service.status_calls
   end
 

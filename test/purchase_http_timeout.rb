@@ -24,5 +24,5 @@ abort "real transport timeout was not observed" unless timed_out
 status = client.a2a(command: "status", payload: {"purchase_id" => id})
 abort "timeout did not follow exactly one persisted effect" unless status.fetch("acceptance_state") == "unknown" && status.fetch("summary").fetch("execution_count") == 1
 recovered = PurchaseDemo::Runtime.buyer.control({"command" => "recover", "purchase_id" => id})
-abort "timeout recovery did not verify original receipt" unless recovered.fetch("summary").fetch("receipt_status").include?("真正なSuccess") && recovered.fetch("summary").fetch("execution_count") == 1
+abort "timeout recovery did not verify original receipt" unless recovered.fetch("summary").fetch("receipt_status") == "receipt_success" && recovered.fetch("summary").fetch("execution_count") == 1
 puts "Actual TLS HTTP read timeout observed after one persisted effect; original Receipt recovered without reexecution"

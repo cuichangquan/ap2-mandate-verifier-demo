@@ -1,51 +1,61 @@
 <!doctype html>
-<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>購入委任の検証デモ</title>
-<style>body{font-family:system-ui,sans-serif;background:#f5f4ef;color:#18332e;margin:0;padding:40px 20px}main{max-width:760px;margin:auto}h1{font-size:2rem}section{background:white;border:1px solid #d6ddd6;border-radius:18px;padding:24px;margin:24px 0}.warning{background:#fff1c7;border-left:6px solid #9b6200;padding:18px}button{background:#175d50;color:white;border:0;border-radius:8px;padding:13px 22px;font-size:1rem;cursor:pointer}label{display:block;margin:18px 0}small{color:#465b55}code{overflow-wrap:anywhere}h2{margin-top:0}</style></head>
-<body><main><small>AP2 MANDATE VERIFIER · <%= Gem.loaded_specs.fetch("ap2_mandate_verifier").version %> · LOCAL DEMO</small>
-<h1>購入委任を、検証してみる。</h1>
-<section aria-label="はじめに"><h2>初めての方へ</h2>
-<p>Checkoutは注文内容、Mandateは承認・委任、Receiptはアプリの結果通知です。まず下の正常例を検証し、改ざん・期限切れ・入力不足と比較してください。</p>
-<p>次に販売者署名とReceipt、複数商品の数量不足を試せます。真正なError Receiptも業務結果は拒否です。</p>
-<p>Payment・選択的開示・12か月の長期Openと予算超過は、<a href="https://github.com/cuichangquan/ap2-mandate-verifier-demo#readme">READMEのRuby単体コマンド</a>で体験できます。</p>
-<p>合成データのみ。検証成功は決済成功ではなく、SDKは実決済を実行しません。本人認証・同意・最新信頼情報は利用アプリの責任です。長期UTC月次profileはAP2汎用MONTHLY準拠を意味しません。</p>
-</section>
-<p><a href="/merchant">販売者署名と成功・拒否Receiptを試す</a></p>
-<% if MultiItemScenario.available? %><p><a href="/multi-item">複数商品・数量を試す</a></p><% end %>
-<% if @multi_item_scenarios %><section id="multi-item-scenario"><h2>複数商品・数量（公開済みGem、合成データ）</h2>
-<p>明示profile: <code><%= MultiItemScenario::PROFILE %> v1</code>。Coffeeを2個、Teaを3個の許可条件で照合します。要件IDと明細IDは別です。</p>
-<% @multi_item_scenarios.each_with_index do |scenario, index| %>
-<h3><%= index.zero? ? "正常な複数明細" : "2件目の数量不足" %></h3>
-<ul><% scenario[:lines].each do |line| %><li><%= line["item"]["title"] %>：<%= line["quantity"] %>個 × <%= line["item"]["price"] %> cents</li><% end %></ul>
-<p>USD合計: <%= scenario[:amount] %> cents ／ <code><%= scenario[:status] %> / <%= scenario[:code] %></code><br>Evidence: <%= scenario[:evidence_present] ? "あり（検証事実のみ）" : "なし" %></p>
-<% scenario[:rows].each do |row| %><p><strong><%= row[:outcome] %></strong>：真正性 <%= row[:verified] %> ／ 購入成功通知 <%= row[:purchase_succeeded] %> ／ 拒否通知 <%= row[:purchase_rejected] %></p><% end %>
-<% end %><p>署名と全検証を通した後も、業務結果はアプリが決めます。真正なError Receiptは購入成功を意味しません。nonce消費・決済・注文更新は実行しません。</p></section><% end %>
-<% if @merchant_scenario %><section id="merchant-scenario"><h2>販売者署名とCheckout Receipt（合成データ）</h2>
-<p>Checkout hash: <code><%= @merchant_scenario[:checkout_hash] %></code><br>
-Mandate reference: <code><%= @merchant_scenario[:reference] %></code></p>
-<% @merchant_scenario[:rows].each do |row| %>
-<p><strong><%= row[:outcome] %></strong>：真正性 <%= row[:verified] %> ／ 購入成功通知 <%= row[:purchase_succeeded] %> ／ 拒否通知 <%= row[:purchase_rejected] %> ／ 別署名者を期待した検証 <%= row[:wrong_issuer_verified] %></p>
-<% end %><p>処理結果は利用アプリが明示します。Receiptの真正性検証は購入処理やMandate認可を実行しません。</p></section><% end %>
-<p>入力組み立て支援：業務情報 → 発行前準備 → 保存・復元 → 現在状態 → 完全検証。独自JSONやハッシュはGemが組み立てます。</p>
-
-<p>同じ合成データを使い、正常・改ざん・期限切れ・通貨の渡し忘れの結果と診断を比較できます。</p>
-<p class="warning"><strong>検証成功・Evidenceは購入許可ではありません。</strong><br>実決済や注文更新は行いません。最終的な購入判断はHostの責任です。</p>
-<section><h2>シナリオを選択</h2>
-<%= form_with url: "/verify", local: true do %>
-  <% ScenarioVerifier::LABELS.each do |key, label| %>
-    <label><%= radio_button_tag :scenario, key, (@scenario || "valid") == key %> <%= label %></label>
+<html lang="<%= I18n.locale %>"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title><%= t("demo.page_title") %></title>
+<style>
+*{box-sizing:border-box}body{font-family:system-ui,sans-serif;background:#f5f4ef;color:#18332e;margin:0;padding:40px 20px;line-height:1.6}main{max-width:760px;margin:auto;min-width:0}h1{font-size:2rem;line-height:1.25}h1,h2,h3,p,dd,a,button,label{overflow-wrap:anywhere}section{background:white;border:1px solid #d6ddd6;border-radius:18px;padding:24px;margin:24px 0}.warning{background:#fff1c7;border-left:6px solid #9b6200;padding:18px}button{background:#175d50;color:white;border:0;border-radius:8px;padding:13px 22px;font-size:1rem;cursor:pointer;max-width:100%;white-space:normal}label{display:block;margin:18px 0}small{color:#465b55}code{overflow-wrap:anywhere;word-break:break-word}h2{margin-top:0}a{color:#175d50}a:focus-visible,button:focus-visible,input:focus-visible{outline:3px solid #9b6200;outline-offset:3px}.languages{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:12px;margin-bottom:16px}.languages a{padding:6px 10px;border:1px solid #175d50;border-radius:6px}.languages [aria-current=page]{background:#175d50;color:white}.demo-nav ul{padding-left:24px}.receipt-details{padding-left:24px}dt{font-weight:600}dd{margin:0 0 12px}fieldset{padding:0;border:0;min-width:0}legend{font-size:1.5rem;font-weight:700}input[type=radio]{accent-color:#175d50}@media(max-width:480px){body{padding:20px 12px}section{padding:18px 16px}h1{font-size:1.7rem}.languages{justify-content:flex-start}}
+</style></head>
+<body><main>
+<nav class="languages" aria-label="<%= t("demo.language_label") %>">
+  <% { "en" => "English", "ja" => "日本語" }.each do |locale, label| %>
+    <%= link_to label, locale_url(locale), lang: locale, hreflang: locale, aria: { current: I18n.locale.to_s == locale ? "page" : nil } %>
   <% end %>
-  <%= button_tag "Gemで検証する" %>
+</nav>
+<small>AP2 MANDATE VERIFIER · <%= Gem.loaded_specs.fetch("ap2_mandate_verifier").version %> · <%= t("demo.local_demo") %></small>
+<h1><%= t("demo.heading") %></h1>
+<section aria-label="<%= t("demo.introduction.label") %>"><h2><%= t("demo.introduction.title") %></h2>
+<p><%= t("demo.introduction.concepts") %></p>
+<p><%= t("demo.introduction.next") %></p>
+<p><%= t("demo.introduction.examples_before") %> <%= link_to t("demo.introduction.examples_link"), I18n.locale == :ja ? "https://github.com/cuichangquan/ap2-mandate-verifier-demo/blob/main/README.ja.md" : "https://github.com/cuichangquan/ap2-mandate-verifier-demo#readme" %><%= t("demo.introduction.examples_after") %></p>
+<p><%= t("demo.introduction.boundary") %></p>
+</section>
+<nav class="demo-nav" aria-label="<%= t("demo.navigation_label") %>"><ul>
+<li><%= link_to t("demo.home_link"), demo_url(:index) %></li>
+<li><%= link_to t("demo.merchant_link"), demo_url(:merchant) %></li>
+<% if MultiItemScenario.available? %><li><%= link_to t("demo.multi_item_link"), demo_url(:multi_item) %></li><% end %>
+</ul></nav>
+<% if @input_error %><p class="warning" role="alert"><%= t("demo.errors.#{@input_error}") %></p><% end %>
+<% if @outcome || @merchant_scenario || @multi_item_scenarios %><p class="snapshot-notice"><%= t("demo.snapshot_notice") %></p><% end %>
+<% if @snapshot_expired %><p class="warning" role="status"><%= t("demo.snapshot_expired") %></p><% end %>
+<% if %w[merchant multi_item].include?(action_name) %><p><%= link_to t("demo.rerun"), demo_url(action_name, run: "1") %></p><% end %>
+<% if @multi_item_scenarios %><section id="multi-item-scenario"><h2><%= t("demo.multi_item.title") %></h2>
+<p><%= t("demo.multi_item.profile") %> <code><%= MultiItemScenario::PROFILE %> v1</code>. <%= t("demo.multi_item.explanation") %></p>
+<% @multi_item_scenarios.each_with_index do |scenario, index| %>
+<h3><%= t(index.zero? ? "demo.multi_item.valid" : "demo.multi_item.short") %></h3>
+<ul><% scenario[:lines].each do |line| %><li><%= t("demo.multi_item.line", product: t("demo.multi_item.products.#{line["item"]["id"]}"), quantity: line["quantity"], price: line["item"]["price"]) %></li><% end %></ul>
+<p><%= t("demo.multi_item.total", amount: scenario[:amount]) %> / <code><%= scenario[:status] %> / <%= scenario[:code] %></code><br><%= t("demo.result.evidence") %>: <%= t(scenario[:evidence_present] ? "demo.result.evidence_present" : "demo.result.evidence_absent") %></p>
+<%= render "diagnostic", diagnostic: diagnostic_for(scenario[:diagnostics]) if scenario[:diagnostics] %>
+<% scenario[:rows].each do |row| %><%= render "receipt", row: row %><% end %>
+<% end %><p><%= t("demo.multi_item.boundary") %></p></section><% end %>
+<% if @merchant_scenario %><section id="merchant-scenario"><h2><%= t("demo.merchant.title") %></h2>
+<p><%= t("demo.merchant.checkout_hash") %>: <code data-value="checkout-hash"><%= @merchant_scenario[:checkout_hash] %></code><br>
+<%= t("demo.merchant.reference") %>: <code data-value="mandate-reference"><%= @merchant_scenario[:reference] %></code></p>
+<% @merchant_scenario[:rows].each do |row| %><%= render "receipt", row: row %><% end %>
+<p><%= t("demo.merchant.boundary") %></p></section><% end %>
+<p><%= t("demo.workflow") %></p>
+<p><%= t("demo.comparison") %></p>
+<p class="warning"><strong><%= t("demo.warning_title") %></strong><br><%= t("demo.warning_body") %></p>
+<section><%= form_with url: demo_url(:verify), local: true do %>
+  <fieldset><legend><%= t("demo.choose_scenario") %></legend>
+  <%= hidden_field_tag :locale, I18n.locale %>
+  <% ScenarioVerifier::SCENARIOS.each do |key| %>
+    <label><%= radio_button_tag :scenario, key, (@scenario || "valid") == key %> <%= t("demo.scenarios.#{key}") %></label>
+  <% end %>
+  <%= button_tag t("demo.verify_button") %></fieldset>
 <% end %></section>
-<% if @outcome %><section aria-live="polite" id="result"><h2><%= @outcome.title %></h2>
-<p><%= @outcome.reason %></p>
-<% if @outcome.diagnostic %>
-<dl id="diagnostic"><dt>失敗した検査</dt><dd><code><%= @outcome.diagnostic[:stage] %></code></dd>
-<dt>確認対象（特定可能な場合）</dt><dd><code><%= @outcome.diagnostic[:field] || "特定できません" %></code></dd>
-<dt>機械判読理由</dt><dd><code><%= @outcome.diagnostic[:reason] %></code></dd>
-<dt>次の確認候補</dt><dd><%= @outcome.diagnostic[:hint] %></dd></dl>
-<% end %>
-<p>Evidence: <%= @outcome.evidence_present ? "あり（検証事実のみ）" : "なし" %></p>
-<small>Gem結果: <code><%= @outcome.status %> / <%= @outcome.code %></code><br>合成デモ時刻（Unix秒）: <%= @outcome.time || "不明" %></small></section><% end %>
-<small>固定profile: ap2.checkout.single_merchant_sku v1<br>信頼情報・注文・鍵はすべて合成fixtureです。実Issuerの信頼は示しません。<br>通常時刻1800000000／期限切れ時刻1800000101。現在の実時刻ではありません。</small>
+<% if @outcome %><section aria-live="polite" id="result"><h2><%= t("demo.result.titles.#{@outcome.title_key}") %></h2>
+<p><%= t("demo.result.reasons.#{@outcome.reason_key}") %></p>
+<%= render "diagnostic", diagnostic: diagnostic_for(@outcome.diagnostics) if @outcome.diagnostics %>
+<p><%= t("demo.result.evidence") %>: <%= t(@outcome.evidence_present ? "demo.result.evidence_present" : "demo.result.evidence_absent") %></p>
+<small><%= t("demo.result.gem_result") %>: <code><%= @outcome.status %> / <%= @outcome.code %></code><br><%= t("demo.result.time") %>: <%= @outcome.time || t("demo.result.unknown") %></small></section><% end %>
+<small><%= t("demo.footer.profile") %> <code>ap2.checkout.single_merchant_sku v1</code><br><%= t("demo.footer.synthetic") %><br><%= t("demo.footer.time") %></small>
 </main></body></html>
