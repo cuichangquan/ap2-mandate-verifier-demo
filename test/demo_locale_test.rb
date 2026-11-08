@@ -232,9 +232,8 @@ class DemoLocaleTest < Minitest::Test
 
   def test_locale_is_scoped_even_when_the_action_raises
     MerchantScenario.stub(:call, ->(*) { raise "synthetic failure" }) do
-      assert_raises(RuntimeError) do
-        @browser.get("/merchant?locale=ja", "action_dispatch.show_exceptions" => :none)
-      end
+      response = @browser.get("/merchant?locale=ja")
+      assert_equal 500, response.status
       assert_equal :en, I18n.locale
     end
   end
