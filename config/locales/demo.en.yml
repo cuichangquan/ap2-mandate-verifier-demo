@@ -100,5 +100,5 @@ en:
     errors:
       invalid_scenario: Choose a supported verification scenario.
       expired_form: This form could not be verified. Reload the page and try again. No verification was run.
-    snapshot_notice: These are saved demonstration results, not a new authorization check. Switching language or
-      reloading does not rerun verification. Results are kept for up to 30 minutes in this server process.
+    snapshot_notice: These are saved demonstration results, not a new authorization check. Switching language displays
+      saved results without rerunning verification. Results are kept for up to 30 minutes in this server process.
