@@ -23,13 +23,18 @@ case "${1:-help}" in
   rotate|recover)
     # Docker-global name serializes wrappers even from different checkouts.
     lock="${project}-tls-maintenance-lock"
-    image=$(compose images -q init | head -n 1)
-    [ -n "$image" ] || { echo 'Build/start the project before maintenance.' >&2; exit 1; }
+    image=$(compose config --images | head -n 1)
+    docker image inspect "$image" >/dev/null 2>&1 || { echo 'Build the project image before maintenance.' >&2; exit 1; }
     if ! docker create --name "$lock" --label ap2.purchase.maintenance="$project" --network none "$image" true >/dev/null 2>&1; then
       echo 'Maintenance is already locked. If the previous command was interrupted, confirm it is no longer running, then use unlock and recover. / 更新ロックがあります。前回のコマンドが停止済みであることを確認して unlock、recover を実行してください。' >&2
       exit 1
     fi
-    trap 'docker rm "$lock" >/dev/null 2>&1 || true' EXIT
+    maintenance_done=no
+    cleanup() {
+      if [ "$maintenance_done" != yes ]; then compose stop -t 30 authority buyer seller >/dev/null 2>&1 || true; fi
+      docker rm "$lock" >/dev/null 2>&1 || true
+    }
+    trap cleanup EXIT
     trap 'exit 130' INT
     trap 'exit 143' TERM
     compose stop -t 30 authority buyer seller
@@ -46,6 +51,7 @@ case "${1:-help}" in
       echo 'Verification failed; services stopped, data retained. Diagnose then recover. / 検証失敗のため停止しました。データは保持されています。診断後 recover してください。' >&2
       exit 1
     fi
+    maintenance_done=yes
     echo 'TLS rotation verified; purchase data retained. / TLS更新を検証済み。購入データは保持されています。'
     ;;
   diagnose)

@@ -4,6 +4,7 @@ require "tmpdir"
 require "fileutils"
 require "cgi"
 require "rack/mock"
+require "timeout"
 
 # Separate Rack suite; no server, network, real signing key, or payment processor.
 # The application reads the persistent session secret at boot, then this fixture
@@ -83,11 +84,14 @@ class PurchaseUITest < Minitest::Test
         options[:input] = Rack::Utils.build_query(params)
       end
       response = @rack.request(method, "http://localhost#{path}", options)
-      if save_cookie && response["set-cookie"]
+      receive(response) if save_cookie
+      response
+    end
+    def receive(response)
+      if response["set-cookie"]
         cookies = Array(response["set-cookie"]).flat_map { |v| v.split("\n") }
         @cookie = cookies.map { |v| v.split(";", 2).first }.join("; ")
       end
-      response
     end
     def get(path) = request("GET", path)
     def post(path, params, **options) = request("POST", path, params: params, **options)
@@ -276,6 +280,13 @@ class PurchaseUITest < Minitest::Test
     script = @browser.get("/readiness.js")
     assert_equal 200, script.status
     assert_includes script["content-type"], "application/javascript"
+    assert_nil script["set-cookie"]
+    # A real script tag is a non-XHR GET. The served bytes are static even with
+    # a different browser/session/locale; JSON diagnostics are not exempted.
+    anonymous_script = Browser.new(PurchaseDemo::AuthorityApplication).get("/readiness.js?locale=ja")
+    assert_equal 200, anonymous_script.status
+    assert_equal script.body, anonymous_script.body
+    assert_nil anonymous_script["set-cookie"]
     assert_includes script.body, "method: 'GET'"
     assert_includes script.body, "controller.abort()"
     assert_includes script.body, "control.disabled = true"
@@ -342,6 +353,65 @@ class PurchaseUITest < Minitest::Test
       refute_match(/translation missing/i, page.body)
     end
     assert_empty @service.calls
+  end
+
+  def test_diagnostic_endpoints_never_commit_cookies_or_change_saved_locale
+    @browser.get("/?locale=ja")
+    original_cookie = @browser.cookie.dup
+    %w[/health /ready /ready?locale=en /ready?locale=ja /readiness.js].each do |path|
+      response = @browser.get(path)
+      assert_equal 200, response.status
+      assert_nil response["set-cookie"], path
+      assert_equal original_cookie, @browser.cookie, path
+    end
+    assert_equal "Available", JSON.parse(@browser.get("/ready").body).dig("display", "summary")
+    assert_includes @browser.get("/").body, '<html lang="ja">'
+    anonymous = Browser.new(PurchaseDemo::AuthorityApplication)
+    %w[/health /ready?locale=ja /readiness.js].each do |path|
+      assert_nil anonymous.get(path)["set-cookie"], path
+    end
+    assert_nil anonymous.cookie
+    assert_empty @service.calls
+  end
+
+  def test_delayed_readiness_response_cannot_overwrite_new_approval_cookie
+    old_cookie = @browser.cookie.dup
+    entered, release = Queue.new, Queue.new
+    @readiness.define_singleton_method(:report) do
+      if Thread.current[:delayed_readiness]
+        entered << true
+        release.pop
+      end
+      value
+    end
+    poll = Thread.new do
+      Thread.current[:delayed_readiness] = true
+      Rack::MockRequest.new(PurchaseDemo::AuthorityApplication).get(
+        "http://localhost/ready?locale=ja", "HTTP_HOST" => "localhost", "HTTP_COOKIE" => old_cookie)
+    end
+    Timeout.timeout(5) { entered.pop }
+    # Approval finishes and its new ownership/draft cookie reaches the browser
+    # before the older read-only request is allowed to return.
+    approve
+    approved_cookie = @browser.cookie.dup
+    refute_equal old_cookie, approved_cookie
+    release << true
+    delayed = Timeout.timeout(5) { poll.value }
+    assert_equal 200, delayed.status
+    assert_nil delayed["set-cookie"]
+    @browser.receive(delayed)
+    assert_equal approved_cookie, @browser.cookie
+    id = @form.fetch("draft_id")
+    page = @browser.get("/purchases/#{id}")
+    assert_equal 200, page.status
+    assert_includes page.body, id
+    refute_equal id, form(page).fetch("draft_id")
+    assert_includes page.body, '<html lang="en">'
+    assert_equal [[:approve, id, "valid"]], @service.calls
+    assert_empty @service.status_calls
+  ensure
+    release << true if release && poll&.alive?
+    poll&.join(5)
   end
 
 end

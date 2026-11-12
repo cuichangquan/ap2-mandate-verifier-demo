@@ -59,6 +59,9 @@ class PurchaseAuthorityController < ActionController::Base
   helper_method :purchase_text, :purchase_path, :language_path, :status_text, :reason_text, :flash_text
   prepend_view_path File.expand_path("views", __dir__)
   protect_from_forgery with: :exception
+  # Static code only: ordinary <script src> requests are not XHR. This action
+  # never embeds user data; all state-changing routes retain CSRF protection.
+  skip_forgery_protection only: :readiness_script
   prepend_around_action :with_locale
   before_action :private_response
   before_action :owned_purchase!, only: [:show, :run_purchase, :recover]
@@ -184,8 +187,16 @@ class PurchaseAuthorityController < ActionController::Base
   end
 
   def with_locale(&action)
-    locale = selected_locale
-    session[:locale] = locale
+    if %w[health ready readiness_script].include?(action_name)
+      # A polling response can arrive after an approval response. Never read or
+      # commit its older CookieStore snapshot, including via middleware/flash.
+      # Diagnostics take their language only from the explicit query parameter.
+      request.session_options[:skip] = true
+      locale = %w[en ja].include?(params[:locale]) ? params[:locale] : "en"
+    else
+      locale = selected_locale
+      session[:locale] = locale
+    end
     I18n.with_locale(locale, &action)
   end
 

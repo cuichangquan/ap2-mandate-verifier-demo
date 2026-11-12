@@ -132,8 +132,8 @@ if $PROGRAM_NAME == __FILE__
     report.each_value do |result|
       result['guidance'] = result['reasons'].to_h { |reason| [reason, {'en' => explanations.fetch(reason)[0], 'ja' => explanations.fetch(reason)[1]}] }
     end
-    puts JSON.pretty_generate({'certificates' => report, 'next_en' => 'Run bin/purchase-demo status for live TLS readiness. If renewal is needed, run bin/purchase-demo rotate-tls. Purchase data is retained.',
-      'next_ja' => '実通信の準備確認は bin/purchase-demo status。証明書更新は bin/purchase-demo rotate-tls。購入データは保持されます。'})
+    puts JSON.pretty_generate({'certificates' => report, 'next_en' => 'Run sh bin/purchase-demo status for live TLS readiness. If renewal is needed, run sh bin/purchase-demo rotate. Purchase data is retained.',
+      'next_ja' => '実通信の準備確認は sh bin/purchase-demo status。証明書更新は sh bin/purchase-demo rotate。購入データは保持されます。'})
     exit(report.values.all? { |r| r['status'] == 'ready' } ? 0 : 1)
   end
   abort 'Run through the stopped-service maintenance wrapper.' unless [['--services-stopped'], ['--services-stopped', '--restart-staging']].include?(ARGV)
