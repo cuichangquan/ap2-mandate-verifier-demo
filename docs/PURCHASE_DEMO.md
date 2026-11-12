@@ -145,7 +145,7 @@ There is no need to `prune` shared Docker caches or remove other projects.
 | buyer | Agent signing key, approval copy, first presentation wire data, seller A2A token, its own inbound control token | Creates Closed within approval and sends it to the seller's A2A endpoint. Cannot issue Open and has no seller control token. |
 | seller | Merchant/synthetic-Receipt signing key, canonical order, challenge, acceptance ledger, processor results, inbound A2A/control tokens | Offers orders, verifies AP2, applies business rules, accepts once, simulates execution and issues Receipts. Has neither issuer nor Agent private keys. |
 
-`authority-state`, `buyer-state` and `seller-state` are each mounted at `/state` only for their respective process. Only public keys and the CA certificate are shared at `/trust:ro` from `public-trust`. Only `init` has access to every volume for initial setup, and it exits without a network. The CA private key exists only in init's memory and is never saved.
+`authority-state`, `buyer-state` and `seller-state` are each mounted at `/state` only for their respective process. Only public keys and the CA certificate are shared at `/trust:ro` from `public-trust`. Only the offline `init` container has access to every volume for initial setup or explicit stopped-service TLS maintenance. It exits without a network. The CA private key exists only in memory during issuance and is never saved.
 
 `PURCHASE_STATE_DIR=/state` and `PURCHASE_TRUST_DIR=/trust` define these boundaries. Runtime processes are non-root, have a read-only filesystem and no capabilities, and are limited to 0.75 CPU, 384 MiB and 64 PIDs. Their state volume remains writable for database operations.
 

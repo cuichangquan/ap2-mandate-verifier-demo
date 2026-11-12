@@ -34,7 +34,13 @@ module PurchaseDemo
       root "purchase_authority#index"
       get "/health", to: "purchase_authority#health"
       get "/ready", to: "purchase_authority#ready"
-      get "/readiness.js", to: "purchase_authority#readiness_script"
+      # Serve fixed, public JavaScript outside the session/CSRF controller.
+      # Non-XHR script tags must work without weakening purchase POST checks.
+      get "/readiness.js", to: lambda { |env|
+        env.fetch("rack.session.options", {})[:skip] = true
+        [200, {"content-type" => "application/javascript; charset=utf-8", "cache-control" => "no-store",
+          "x-content-type-options" => "nosniff"}, [File.read(File.expand_path("views/readiness.js", __dir__))]]
+      }
       post "/approve", to: "purchase_authority#approve"
       get "/purchases/:id", to: "purchase_authority#show"
       post "/purchases/:id/run", to: "purchase_authority#run_purchase"
@@ -59,9 +65,6 @@ class PurchaseAuthorityController < ActionController::Base
   helper_method :purchase_text, :purchase_path, :language_path, :status_text, :reason_text, :flash_text
   prepend_view_path File.expand_path("views", __dir__)
   protect_from_forgery with: :exception
-  # Static code only: ordinary <script src> requests are not XHR. This action
-  # never embeds user data; all state-changing routes retain CSRF protection.
-  skip_forgery_protection only: :readiness_script
   prepend_around_action :with_locale
   before_action :private_response
   before_action :owned_purchase!, only: [:show, :run_purchase, :recover]
@@ -76,10 +79,6 @@ class PurchaseAuthorityController < ActionController::Base
   def ready
     result = readiness.report
     render json: result.merge("display" => readiness_display(result)), status: result["ready"] ? :ok : :service_unavailable
-  end
-
-  def readiness_script
-    render plain: File.read(File.expand_path("views/readiness.js", __dir__)), content_type: "application/javascript"
   end
 
   def index
@@ -187,7 +186,7 @@ class PurchaseAuthorityController < ActionController::Base
   end
 
   def with_locale(&action)
-    if %w[health ready readiness_script].include?(action_name)
+    if %w[health ready].include?(action_name)
       # A polling response can arrive after an approval response. Never read or
       # commit its older CookieStore snapshot, including via middleware/flash.
       # Diagnostics take their language only from the explicit query parameter.
