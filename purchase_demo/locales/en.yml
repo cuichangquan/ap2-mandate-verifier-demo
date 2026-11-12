@@ -118,7 +118,8 @@
         "recovered": "The saved result was requested. Check the status of each stage.",
         "recovery_failed": "Recovery could not be completed. Keep the same purchase ID and check again.",
         "expired_form": "This form has expired. Reload the page and try again.",
-        "unknown": "A previous message could not be identified. Check the current purchase status before taking further action."
+        "unknown": "A previous message could not be identified. Check the current purchase status before taking further action.",
+        "dependencies_unavailable": "Required services are not ready. No new operation was started. Check connection diagnostics, then return to the same purchase ID."
       },
       "stages": {
         "ap2": {
@@ -137,6 +138,58 @@
           "title": "Receipt verification",
           "description": "Verifies the signature and binding to this purchase."
         }
+      },
+      "readiness": {
+        "title": "Startup and connection status",
+        "states": {
+          "ready": "Available",
+          "preparing": "Preparing",
+          "unreachable": "Cannot connect",
+          "certificate_update_required": "Certificate update required"
+        },
+        "roles": {
+          "authority": "Authority",
+          "buyer": "Buyer",
+          "seller": "Seller",
+          "ca": "Test CA"
+        },
+        "unknown": "Not confirmed",
+        "renew": "Update needed",
+        "valid": "Valid",
+        "certificate": "%{role}: expires %{expiry}; remaining %{remaining} seconds; %{update}.",
+        "checked_at": "Last checked: %{time}",
+        "guidance": "Preparing: wait for initialization and check again. Cannot connect: inspect service logs and restart the affected service. Certificate warning: run sh bin/purchase-demo diagnose, then sh bin/purchase-demo rotate using the same Compose project. Renewal pauses all three services. A failed TLS check does not prove a specific cause; use diagnostics to inspect the stored certificates.",
+        "preservation": "Status checks never approve or execute a purchase. History remains available when Agents are offline. Keep the same purchase ID after an interrupted response; certificate renewal preserves history and does not renew purchase authorizations.",
+        "recheck": "Check connections again",
+        "no_script": "Automatic checks require JavaScript. Reload to check connections; server-side guards still protect operations.",
+        "checking": "Checking connections; purchase controls are temporarily paused.",
+        "poll_failed": "Cannot confirm current connections. Purchase controls are paused. Check service logs and reload; saved purchase history is unchanged.",
+        "reasons": {
+          "rotation_pending": "Certificate renewal is incomplete. Keep services stopped and rerun the renewal command.",
+          "expired": "A certificate has expired. Renew the complete TLS set.",
+          "expiring": "A certificate expires within 48 hours. Schedule TLS renewal.",
+          "not_yet_valid": "A certificate is not yet valid. Check the clock and certificate diagnostics.",
+          "ca_mismatch": "The certificate does not match the trusted CA. Renew the complete TLS set.",
+          "key_mismatch": "The certificate and TLS private key do not match. Renew the complete TLS set.",
+          "hostname_mismatch": "The certificate does not match the service hostname. Renew the complete TLS set.",
+          "invalid_chain": "The certificate chain could not be validated. Check certificate diagnostics.",
+          "missing_tls_files": "TLS files are missing. Check initialization and diagnostics without resetting volumes.",
+          "invalid_tls_material": "TLS material could not be read or validated. Check diagnostics.",
+          "tls_verification_failed": "TLS verification failed. Run diagnostics to distinguish expiry, trust, and hostname problems.",
+          "connection_failed": "The service did not respond. Check its startup status and logs.",
+          "tls_handshake_failed": "The TLS handshake failed; the cause is not confirmed. Check service logs and certificate diagnostics.",
+          "authentication_failed": "Service authentication failed. Check the existing credentials and matching Compose project; do not reset saved data."
+        },
+        "checks": {
+          "initialization": "Initialization is not complete.",
+          "maintenance": "TLS maintenance is pending.",
+          "files": "Required protected files are not ready.",
+          "storage": "Persistent storage is not available.",
+          "identity": "Signing identity or credentials are not ready.",
+          "tls": "TLS checks did not pass.",
+          "local_state": "Local readiness could not be confirmed."
+        },
+        "certificate_source": "Saved certificate metadata is shown below. Live TLS and service readiness are checked separately above."
       }
     }
   }

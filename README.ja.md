@@ -166,3 +166,7 @@ sh test/purchase_docker_validation.sh
 ### 過去の候補build
 
 通常利用は上記の公開Gem用Dockerfileで完結します。`Dockerfile.candidate`、`Gemfile.candidate`、専用lockfileは、過去の **0.6.0** source比較手順として残しています。現行1.6.0のbuild手順でも、公開Gem bytesの証明でもありません。そのlockfileを通常起動に混ぜないでください。以前の記録は[履歴（英語／日本語）](docs/HISTORY.md)、[0.6.0複数明細候補（日本語）](docs/MULTI_ITEM_CANDIDATE.md)、[さらに古い候補（英語・一部日本語のラベル）](CANDIDATE.md)に残しています。
+
+### 購入デモの起動準備とTLS更新
+
+リポジトリ直下で `COMPOSE_PROJECT_NAME=ap2-purchase-demo` を毎回同じ値にし、`sh bin/purchase-demo start` で起動、`status` または `diagnose` で診断します。`rotate` は全役割を停止してTLS一式を更新し、購入データを保持して実通信を確認します。中断後は `recover` を使います。更新に `down -v` は使いません。[最短コマンド・保持するデータ・失敗時の復旧](docs/PURCHASE_DEMO.ja.md)を参照してください。

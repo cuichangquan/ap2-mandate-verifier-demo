@@ -25,13 +25,58 @@ The first `init` creates role-specific private keys, short-lived test certificat
 4. Choose **Run Agent / retry the same purchase** for that ID. The normal offer is **3 × 800 JPY = 2,400 JPY**.
 5. Read AP2 verification, application execution decision, mock payment result and Receipt verification separately, together with the execution count.
 
-A first-start communication failure can occur if another service is not yet ready. If the approval was saved, continue with the same purchase ID. Do not work around it by creating another approval.
+Wait for the readiness panel before using purchase actions. If readiness changes during a purchase, retain the same purchase ID.
 
 ### Language, ownership and navigation
 
 **English / 日本語** appears on every purchase page, including results and history. Language persists through forms, redirects, navigation and reloads. Unsupported values fall back to English. A language switch uses the owned purchase's saved summary; it does not issue an approval, run the agent, poll the processor or perform recovery. **Refresh status** explicitly polls the current status. Language selection itself is request-scoped, so one request does not change another user's language.
 
 Keep the same hostname (`127.0.0.1`) and browser session. The UI displays only purchases approved by that session. A different browser, private session or hostname does not acquire access merely by knowing a purchase ID. Use the purchase-history links to return to an existing purchase. Language does not change quantities, JPY amounts, approval terms, IDs or execution counts. Protocol values, signed Mandates/Receipts and machine-readable codes are not translated.
+
+## Readiness and data-preserving TLS maintenance
+
+From the repository root, use the **same Compose project name every time**:
+
+```sh
+export COMPOSE_PROJECT_NAME=ap2-purchase-demo
+sh bin/purchase-demo start       # build/start; bounded readiness wait
+sh bin/purchase-demo status      # live, read-only readiness and TLS checks
+sh bin/purchase-demo diagnose    # disk certificate diagnosis, also while stopped
+sh bin/purchase-demo stop        # retain all purchase volumes
+sh bin/purchase-demo rotate      # stop, replace TLS set, restart and verify
+```
+
+The screen distinguishes **Preparing**, **Available**, **Cannot connect** and **Certificate renewal required**. It refreshes diagnostic state without approving, running, polling a payment result or recovering a purchase. Actions are checked again on the server, so an old page cannot bypass readiness. Cached history remains readable while another role is down. A status failure is not evidence that a payment failed: retain the original purchase ID and explicitly refresh/recover after readiness returns. Never create a second approval to work around a communication error.
+
+`status` checks initialized files, storage and required communication paths with real CA and hostname verification. Its wait/retry limit is finite; nonzero exit means readiness was not established. `diagnose` reports the CA/Buyer/Seller certificate deadlines and remaining seconds, with a warning within 48 hours of expiry, and distinguishes observed expiry, key mismatch, CA inconsistency and unknown connection failures. Public on-disk certificate metadata is not proof of a successful live connection. No command weakens TLS or prints private keys, tokens or signed documents.
+
+`rotate` temporarily stops **all three roles**, allowing up to 30 seconds for shutdown. An interrupted purchase remains associated with its original ID and saved state. Only TLS private keys, service certificates and CA/public certificate trust information change. Purchase IDs, approvals, original Mandates/Receipts, acceptance and processor records, AP2 signing keys, authentication tokens and the session secret remain. Use the same browser, hostname and cookies to retain history access. Approval, challenge and Receipt deadlines are **not extended**. Unknown payments are never automatically dispatched again.
+
+Rotation stages one consistent CA/Buyer/Seller set and records pending maintenance before replacement. During an incomplete rotation purchase operations fail closed. Services resume only after the set is consistent; the wrapper then verifies live readiness. A verification failure stops services again and retains data. Successful output ends with `TLS rotation verified; purchase data retained.`
+
+### Interrupted or failed update
+
+```sh
+# Inspect without starting or resetting the data:
+sh bin/purchase-demo diagnose
+# Resume the saved TLS update, restart, and verify:
+sh bin/purchase-demo recover
+# If diagnostics identify damaged/expired staging, explicitly rebuild TLS staging:
+sh bin/purchase-demo recover --restart-staging
+```
+
+Normal failure releases the maintenance lock. A forced kill or host shutdown can leave the lock container behind. **First confirm no rotate/recover command is still running**, then:
+
+```sh
+sh bin/purchase-demo unlock --confirm-no-maintenance-running
+sh bin/purchase-demo recover
+```
+
+Do not remove the pending marker manually or start operations on a mixed certificate set. Keep the same project name and volumes. Repeated maintenance commands are serialized; never run parallel raw init/rotation commands. The maintenance container is network-isolated and temporarily mounts every role's volume; normal services retain their separated mounts.
+
+Ordinary stop/restart/update **does not use `down -v`**. That command is a deliberate, destructive full reset, not certificate renewal or recovery. Do not delete ledgers or use Docker prune. A fresh project name creates separate history rather than migrating existing purchases.
+
+For an isolated verification stack, `PURCHASE_IMAGE` selects a unique image and `PURCHASE_UI_PORT` a free **loopback-only** host port (defaults: `ap2-purchase-demo:local`, `3100`). These do not change internal TLS hostnames.
 
 ## 2. Eight scenarios
 
@@ -100,7 +145,7 @@ There is no need to `prune` shared Docker caches or remove other projects.
 | buyer | Agent signing key, approval copy, first presentation wire data, seller A2A token, its own inbound control token | Creates Closed within approval and sends it to the seller's A2A endpoint. Cannot issue Open and has no seller control token. |
 | seller | Merchant/synthetic-Receipt signing key, canonical order, challenge, acceptance ledger, processor results, inbound A2A/control tokens | Offers orders, verifies AP2, applies business rules, accepts once, simulates execution and issues Receipts. Has neither issuer nor Agent private keys. |
 
-`authority-state`, `buyer-state` and `seller-state` are each mounted at `/state` only for their respective process. Only public keys and the CA certificate are shared at `/trust:ro` from `public-trust`. Only `init` has access to every volume for initial setup, and it exits without a network. The CA private key exists only in init's memory and is never saved.
+`authority-state`, `buyer-state` and `seller-state` are each mounted at `/state` only for their respective process. Only public keys and the CA certificate are shared at `/trust:ro` from `public-trust`. Only the offline `init` container has access to every volume for initial setup or explicit stopped-service TLS maintenance. It exits without a network. The CA private key exists only in memory during issuance and is never saved.
 
 `PURCHASE_STATE_DIR=/state` and `PURCHASE_TRUST_DIR=/trust` define these boundaries. Runtime processes are non-root, have a read-only filesystem and no capabilities, and are limited to 0.75 CPU, 384 MiB and 64 PIDs. Their state volume remains writable for database operations.
 
@@ -148,7 +193,7 @@ This is a dedicated transport for two known Docker services, not a generic exter
 ## 7. Expiry and limits
 
 - Open approval lasts **600 seconds**. A challenge lasts at most **300 seconds**, within approval expiry. Unexecuted purchases are rejected after expiry.
-- Test TLS certificates last **seven days** from initialization. Expiry is enforced and causes communication failure; renewal is not automated.
+- Test TLS certificates last **seven days** from initialization. Expiry is enforced; use the explicit data-preserving TLS update above.
 - Timeout or restart does not automatically extend approval or challenge validity. Looking up a consumed purchase does not authorize a new payment.
 - Receipt comparison is limited to **24 hours from original approval issuance**. Recovery is not guaranteed indefinitely.
 - If a process stops with a reserved acceptance record and no processor result, lookup is available but automatic redispatch is not. An explicit operational decision is required.

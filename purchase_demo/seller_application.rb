@@ -7,6 +7,7 @@ require 'logger'
 require 'json'
 require 'securerandom'
 require_relative 'runtime'
+require_relative 'readiness'
 
 module PurchaseDemo
   module SellerAuthentication
@@ -69,7 +70,15 @@ module PurchaseDemo
 
     def call(env)
       path, method = env['PATH_INFO'], env['REQUEST_METHOD']
-      return response(200, { 'ok' => true, 'role' => 'seller' }) if method == 'GET' && path == '/health'
+      if method == 'GET' && %w[/health /ready].include?(path)
+        if path == '/ready'
+          authorized = %w[seller_control.token seller_a2a.token].any? { |name| SellerAuthentication.valid?(env['HTTP_AUTHORIZATION'], name) }
+          return response(401, { 'error' => 'unauthorized' }) unless authorized
+        end
+        readiness = Readiness.new(role: 'seller')
+        report = path == '/health' ? readiness.local : readiness.report
+        return response(report['ready'] ? 200 : 503, report)
+      end
       if method == 'POST' && path == '/control'
         return response(401, { 'error' => 'unauthorized' }) unless SellerAuthentication.valid?(env['HTTP_AUTHORIZATION'], 'seller_control.token')
         return response(415, { 'error' => 'json required' }) unless env['CONTENT_TYPE'].to_s.split(';').first == 'application/json'
@@ -77,12 +86,16 @@ module PurchaseDemo
         return response(413, { 'error' => 'request too large' }) if raw.bytesize > 262_144
         payload = JSON.parse(raw, max_nesting: 32)
         return response(400, { 'error' => 'invalid request' }) unless payload.is_a?(Hash)
+        Readiness.new(role: 'seller').require!('provision')
         return response(200, Runtime.seller.provision(payload))
       end
       allowed = (method == 'GET' && path == '/.well-known/agent-card.json') || (method == 'POST' && path == '/a2a')
       return response(404, { 'error' => 'not found' }) unless allowed
       return response(401, { 'error' => 'unauthorized' }) unless SellerAuthentication.valid?(env['HTTP_AUTHORIZATION'], 'seller_a2a.token')
+      Readiness.new(role: 'seller').require!('purchase')
       @app.call(env)
+    rescue Readiness::Unavailable
+      response(503, { 'error' => 'service_not_ready' })
     rescue StandardError
       response(400, { 'error' => 'request rejected' })
     end

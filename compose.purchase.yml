@@ -1,6 +1,6 @@
 name: ap2-purchase-demo
 x-runtime: &runtime
-  image: ap2-purchase-demo:local
+  image: ${PURCHASE_IMAGE:-ap2-purchase-demo:local}
   build:
     context: .
     dockerfile: Dockerfile.purchase
@@ -40,14 +40,26 @@ services:
       - public-trust:/trust
   authority:
     <<: *runtime
+    healthcheck:
+      test: [CMD, bundle, exec, ruby, purchase_demo/readiness.rb, authority]
+      interval: 10s
+      timeout: 15s
+      retries: 3
+      start_period: 20s
     networks: [purchase, ui]
     command: [bundle, exec, puma, -b, "tcp://0.0.0.0:3100", -t, "1:2", --quiet, config.purchase-authority.ru]
-    ports: ["127.0.0.1:3100:3100"]
+    ports: ["127.0.0.1:${PURCHASE_UI_PORT:-3100}:3100"]
     volumes:
       - authority-state:/state
       - public-trust:/trust:ro
   buyer:
     <<: *runtime
+    healthcheck:
+      test: [CMD, bundle, exec, ruby, purchase_demo/readiness.rb, buyer]
+      interval: 10s
+      timeout: 15s
+      retries: 3
+      start_period: 20s
     networks: [purchase]
     command: [bundle, exec, puma, -b, "ssl://0.0.0.0:3443?key=/state/tls.key&cert=/state/tls.crt", -t, "1:2", --quiet, config.purchase-buyer.ru]
     volumes:
@@ -55,6 +67,12 @@ services:
       - public-trust:/trust:ro
   seller:
     <<: *runtime
+    healthcheck:
+      test: [CMD, bundle, exec, ruby, purchase_demo/readiness.rb, seller]
+      interval: 10s
+      timeout: 15s
+      retries: 3
+      start_period: 20s
     networks: [purchase]
     command: [bundle, exec, puma, -b, "ssl://0.0.0.0:3443?key=/state/tls.key&cert=/state/tls.crt", -t, "1:2", --quiet, config.purchase-seller.ru]
     volumes:

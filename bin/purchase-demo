@@ -1,0 +1,68 @@
+#!/bin/sh
+# Run in the repository root. Never deletes purchase volumes.
+set -eu
+[ -f compose.purchase.yml ] || { echo 'Run from the repository root / リポジトリ直下で実行してください' >&2; exit 2; }
+project=${COMPOSE_PROJECT_NAME:-ap2-purchase-demo}
+case "$project" in ''|*[!a-z0-9_-]*) echo 'Invalid COMPOSE_PROJECT_NAME' >&2; exit 2;; esac
+export COMPOSE_PROJECT_NAME="$project"
+compose() { docker compose -f compose.purchase.yml "$@"; }
+status() { compose exec -T authority bundle exec ruby purchase_demo/readiness.rb authority; }
+wait_ready() {
+  attempt=0
+  while [ "$attempt" -lt 12 ]; do
+    if status; then return 0; fi
+    attempt=$((attempt + 1)); sleep 2
+  done
+  echo 'Not ready. Run status and inspect certificates; no purchase was retried. / 準備未完了です。status で診断してください。購入の自動再実行はしていません。' >&2
+  return 1
+}
+case "${1:-help}" in
+  start) compose up -d --build; wait_ready ;;
+  status) status ;;
+  stop) compose stop authority buyer seller ;;
+  rotate|recover)
+    # Docker-global name serializes wrappers even from different checkouts.
+    lock="${project}-tls-maintenance-lock"
+    image=$(compose config --images | head -n 1)
+    docker image inspect "$image" >/dev/null 2>&1 || { echo 'Build the project image before maintenance.' >&2; exit 1; }
+    if ! docker create --name "$lock" --label ap2.purchase.maintenance="$project" --network none "$image" true >/dev/null 2>&1; then
+      echo 'Maintenance is already locked. If the previous command was interrupted, confirm it is no longer running, then use unlock and recover. / 更新ロックがあります。前回のコマンドが停止済みであることを確認して unlock、recover を実行してください。' >&2
+      exit 1
+    fi
+    maintenance_done=no
+    cleanup() {
+      if [ "$maintenance_done" != yes ]; then compose stop -t 30 authority buyer seller >/dev/null 2>&1 || true; fi
+      docker rm "$lock" >/dev/null 2>&1 || true
+    }
+    trap cleanup EXIT
+    trap 'exit 130' INT
+    trap 'exit 143' TERM
+    compose stop -t 30 authority buyer seller
+    running=$(compose ps --status running -q authority buyer seller)
+    [ -z "$running" ] || { echo 'Services are still running; rotation refused.' >&2; exit 1; }
+    case "${2:-}" in
+      "") compose run --rm --no-deps init bundle exec ruby purchase_demo/tls_rotate.rb --services-stopped ;;
+      --restart-staging) compose run --rm --no-deps init bundle exec ruby purchase_demo/tls_rotate.rb --services-stopped --restart-staging ;;
+      *) echo "Unknown maintenance option" >&2; exit 2 ;;
+    esac
+    compose up -d --no-build authority buyer seller
+    if ! wait_ready; then
+      compose stop -t 30 authority buyer seller
+      echo 'Verification failed; services stopped, data retained. Diagnose then recover. / 検証失敗のため停止しました。データは保持されています。診断後 recover してください。' >&2
+      exit 1
+    fi
+    maintenance_done=yes
+    echo 'TLS rotation verified; purchase data retained. / TLS更新を検証済み。購入データは保持されています。'
+    ;;
+  diagnose)
+    compose run --rm --no-deps init bundle exec ruby purchase_demo/tls_rotate.rb --diagnose
+    ;;
+  unlock)
+    echo 'Only use after confirming no rotate/recover command is still running. / rotate/recover が実行中でないことを確認してください。' >&2
+    [ "${2:-}" = '--confirm-no-maintenance-running' ] || exit 2
+    lock="${project}-tls-maintenance-lock"
+    [ "$(docker inspect --format '{{ index .Config.Labels "ap2.purchase.maintenance" }}' "$lock")" = "$project" ] || exit 1
+    docker rm "$lock" >/dev/null
+    ;;
+  *) echo 'Usage: sh bin/purchase-demo start|status|diagnose|stop|rotate|recover|unlock --confirm-no-maintenance-running'; exit 2 ;;
+esac

@@ -63,6 +63,7 @@ module PurchaseDemo
     private
 
     def exchange(service, path, payload, token_file)
+      raise Error, 'TLS maintenance in progress' if File.exist?(File.join(@trust_dir, '.tls-rotation.json'))
       raise Error, 'invalid payload' unless payload.nil? || payload.is_a?(Hash)
       body = payload.nil? ? nil : JSON.generate(payload, max_nesting: 32, allow_nan: false)
       raise Error, 'request too large' if body && body.bytesize > MAX_BYTES

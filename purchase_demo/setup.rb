@@ -42,6 +42,7 @@ module PurchaseDemo
       trust = '/trust'
       if File.exist?(File.join(trust, '.initialized'))
         validate_existing!(dirs: dirs, trust: trust)
+        copy_public_tls!(dirs: dirs, trust: trust) unless File.exist?(File.join(trust, '.tls-rotation.json'))
         return
       end
       # Never replace keys/ledgers after a partial or previous initialization.
@@ -63,6 +64,7 @@ module PurchaseDemo
         cert = certificate(role, tls_key, ca, ca_key)
         write(File.join(dirs.fetch(role), 'tls.key'), tls_key.private_to_pem)
         write(File.join(dirs.fetch(role), 'tls.crt'), cert.to_pem)
+        write(File.join(trust, "#{role}.crt"), cert.to_pem, mode: 0o644)
       end
       { 'seller_a2a' => %w[buyer seller], 'seller_control' => %w[authority seller], 'buyer_control' => %w[authority buyer] }.each do |name, recipients|
         token = SecureRandom.hex(32)
@@ -76,6 +78,16 @@ module PurchaseDemo
         end
       end
       write(File.join(trust, '.initialized'), '1', mode: 0o644)
+    end
+
+    # Add only public copies for older volumes; never replace any credentials.
+    def copy_public_tls!(dirs:, trust:)
+      %w[buyer seller].each do |role|
+        path = File.join(trust, "#{role}.crt")
+        next if File.exist?(path)
+        cert = OpenSSL::X509::Certificate.new(File.binread(File.join(dirs.fetch(role), 'tls.crt')))
+        write(path, cert.to_pem, mode: 0o644)
+      end
     end
 
     def certificate(name, key, issuer, issuer_key, ca: false)

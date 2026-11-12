@@ -11,6 +11,7 @@ on:
       - 'compose.purchase.yml'
       - 'config.purchase-*.ru'
       - 'purchase_demo/**'
+      - 'bin/purchase-demo'
       - 'docs/PURCHASE*'
       - 'docs/images/purchase-architecture.svg'
       - 'Dockerfile.acceptance*'
@@ -45,6 +46,8 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           persist-credentials: false
+      - name: Check maintenance wrapper failure paths
+        run: python3 test/purchase_wrapper_test.py
       - name: Require native runner and build published Gem images without cache
         env:
           ARCH: ${{ matrix.arch }}
@@ -83,4 +86,5 @@ jobs:
             sleep 1
           done
           curl --fail --silent --max-time 3 http://127.0.0.1:3100/ >/dev/null
-          timeout 300 sh test/purchase_docker_validation.sh
+          timeout 420 sh test/purchase_docker_validation.sh
+          PURCHASE_MAINTENANCE_QA=1 timeout 420 sh test/purchase_maintenance_validation.sh
