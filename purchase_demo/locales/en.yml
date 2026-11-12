@@ -177,7 +177,8 @@
           "invalid_tls_material": "TLS material could not be read or validated. Check diagnostics.",
           "tls_verification_failed": "TLS verification failed. Run diagnostics to distinguish expiry, trust, and hostname problems.",
           "connection_failed": "The service did not respond. Check its startup status and logs.",
-          "tls_handshake_failed": "The TLS handshake failed; the cause is not confirmed. Check service logs and certificate diagnostics."
+          "tls_handshake_failed": "The TLS handshake failed; the cause is not confirmed. Check service logs and certificate diagnostics.",
+          "authentication_failed": "Service authentication failed. Check the existing credentials and matching Compose project; do not reset saved data."
         },
         "checks": {
           "initialization": "Initialization is not complete.",
@@ -187,7 +188,8 @@
           "identity": "Signing identity or credentials are not ready.",
           "tls": "TLS checks did not pass.",
           "local_state": "Local readiness could not be confirmed."
-        }
+        },
+        "certificate_source": "Saved certificate metadata is shown below. Live TLS and service readiness are checked separately above."
       }
     }
   }

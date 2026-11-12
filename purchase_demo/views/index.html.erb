@@ -31,6 +31,7 @@
     <h2 id="readiness-title"><%= purchase_text("readiness.title") %></h2>
     <p id="readiness-summary" role="status" aria-live="polite"><%= @readiness_display['summary'] %></p>
     <ul class="readiness-list" id="readiness-services"><% @readiness_display['services'].each do |service| %><li><strong><%= service['label'] %>: <%= service['status'] %></strong> <%= service['details'] %></li><% end %></ul>
+    <p class="subtle"><%= purchase_text("readiness.certificate_source") %></p>
     <ul class="readiness-list" id="readiness-certificates"><% @readiness_display['certificates'].each do |certificate| %><li><%= certificate['text'] %></li><% end %></ul>
     <p class="subtle" id="readiness-checked"><%= @readiness_display['checked_at'] %></p>
     <p class="subtle"><%= purchase_text("readiness.guidance") %></p>

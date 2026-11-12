@@ -149,7 +149,7 @@ class PurchaseAuthorityController < ActionController::Base
     statuses = %w[ready preparing unreachable certificate_update_required]
     translate_status = ->(value) { purchase_text("readiness.states.#{statuses.include?(value) ? value : 'unreachable'}") }
     services = [report] + report.fetch("dependencies", {}).values
-    reasons = %w[rotation_pending expired expiring not_yet_valid ca_mismatch key_mismatch hostname_mismatch invalid_chain missing_tls_files invalid_tls_material tls_verification_failed tls_handshake_failed connection_failed]
+    reasons = %w[rotation_pending expired expiring not_yet_valid ca_mismatch key_mismatch hostname_mismatch invalid_chain missing_tls_files invalid_tls_material tls_verification_failed tls_handshake_failed authentication_failed connection_failed]
     checks = %w[initialization maintenance files storage identity tls local_state]
     rows = %w[authority buyer seller].map do |role|
       service = services.find { |item| item["role"] == role } || {"status" => "unreachable"}
@@ -158,7 +158,7 @@ class PurchaseAuthorityController < ActionController::Base
       Array(service["checks"]).each do |check|
         details << purchase_text("readiness.checks.#{check['name']}") if !check["ready"] && checks.include?(check["name"])
       end
-      {"role" => role, "label" => purchase_text("readiness.roles.#{role}"), "status" => translate_status.call(service["status"]), "details" => details.uniq.join(" ")}
+      {"role" => role, "label" => purchase_text("readiness.roles.#{role}"), "status" => translate_status.call(service["local_status"] || service["status"]), "details" => details.uniq.join(" ")}
     end
     certificates = services.each_with_object({}) do |service, collected|
       value = service["certificates"]
