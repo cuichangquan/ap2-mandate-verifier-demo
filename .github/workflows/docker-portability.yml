@@ -11,6 +11,7 @@ on:
       - 'compose.purchase.yml'
       - 'config.purchase-*.ru'
       - 'purchase_demo/**'
+      - 'bin/purchase-demo'
       - 'docs/PURCHASE*'
       - 'docs/images/purchase-architecture.svg'
       - 'Dockerfile.acceptance*'
@@ -83,4 +84,5 @@ jobs:
             sleep 1
           done
           curl --fail --silent --max-time 3 http://127.0.0.1:3100/ >/dev/null
-          timeout 300 sh test/purchase_docker_validation.sh
+          timeout 420 sh test/purchase_docker_validation.sh
+          PURCHASE_MAINTENANCE_QA=1 timeout 420 sh test/purchase_maintenance_validation.sh

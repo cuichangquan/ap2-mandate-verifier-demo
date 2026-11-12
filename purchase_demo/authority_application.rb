@@ -5,6 +5,7 @@ require "action_controller/railtie"
 require "securerandom"
 require "logger"
 require_relative "runtime"
+require_relative "readiness"
 
 module PurchaseDemo
   class AuthorityApplication < Rails::Application
@@ -26,11 +27,14 @@ module PurchaseDemo
     config.filter_parameters += [:authenticity_token, :token, :jwt, :jws, :presentation,
       :nonce, :key, :secret, :password, :authorization, :checkout, :payment, :receipt]
     config.action_dispatch.default_headers.merge!(
-      "Content-Security-Policy" => "default-src 'none'; style-src 'unsafe-inline'; form-action 'self'; frame-ancestors 'none'; base-uri 'none'",
+      "Content-Security-Policy" => "default-src 'none'; script-src 'self'; connect-src 'self'; style-src 'unsafe-inline'; form-action 'self'; frame-ancestors 'none'; base-uri 'none'",
       "Referrer-Policy" => "same-origin", "X-Content-Type-Options" => "nosniff",
       "Cache-Control" => "no-store")
     routes.append do
       root "purchase_authority#index"
+      get "/health", to: "purchase_authority#health"
+      get "/ready", to: "purchase_authority#ready"
+      get "/readiness.js", to: "purchase_authority#readiness_script"
       post "/approve", to: "purchase_authority#approve"
       get "/purchases/:id", to: "purchase_authority#show"
       post "/purchases/:id/run", to: "purchase_authority#run_purchase"
@@ -41,7 +45,7 @@ end
 
 class PurchaseAuthorityController < ActionController::Base
   SCENARIOS = PurchaseDemo::SCENARIOS
-  FLASH_CODES = %w[approval_required approval_saved approval_failed run_failed recovered recovery_failed].freeze
+  FLASH_CODES = %w[approval_required approval_saved approval_failed run_failed recovered recovery_failed dependencies_unavailable].freeze
   # Pending cookies from the previous UI may contain sentences instead of codes.
   # Translate exact known messages for display only; normal flash expiry is kept.
   LEGACY_FLASH = {
@@ -58,9 +62,26 @@ class PurchaseAuthorityController < ActionController::Base
   prepend_around_action :with_locale
   before_action :private_response
   before_action :owned_purchase!, only: [:show, :run_purchase, :recover]
+  before_action :guard_operation!, only: [:approve, :run_purchase, :recover]
   rescue_from ActionController::InvalidAuthenticityToken, with: :invalid_request
 
+  def health
+    result = readiness.local
+    render json: result, status: result["ready"] ? :ok : :service_unavailable
+  end
+
+  def ready
+    result = readiness.report
+    render json: result.merge("display" => readiness_display(result)), status: result["ready"] ? :ok : :service_unavailable
+  end
+
+  def readiness_script
+    render plain: File.read(File.expand_path("views/readiness.js", __dir__)), content_type: "application/javascript"
+  end
+
   def index
+    @readiness = readiness.report
+    @readiness_display = readiness_display(@readiness)
     session[:draft_id] ||= SecureRandom.uuid
     @draft_id = session[:draft_id]
     @scenarios = SCENARIOS.to_h { |code| [code, purchase_text("scenarios.#{code}")] }
@@ -86,9 +107,9 @@ class PurchaseAuthorityController < ActionController::Base
   end
 
   def show
-    # A language switch reads cached presentation data only. It must not
-    # contact Agents, reconcile state, approve, or execute a purchase.
-    @purchase = if params[:refresh] == "1"
+    # Language changes read cached purchase summaries. Read-only health probes
+    # may run, but never query purchase status, reconcile, approve, or execute.
+    @purchase = if params[:refresh] == "1" && readiness.report.fetch("operations").fetch("status", false)
       safe_status(params[:id])
     else
       cached_history.find { |purchase| purchase["purchase_id"] == params[:id] }
@@ -112,6 +133,50 @@ class PurchaseAuthorityController < ActionController::Base
   end
 
   private
+
+  def readiness
+    PurchaseDemo::Readiness.new(role: "authority")
+  end
+
+  def guard_operation!
+    operation = {"approve" => "approve", "run_purchase" => "run", "recover" => "recover"}.fetch(action_name)
+    return if readiness.report.fetch("operations").fetch(operation, false)
+    render plain: purchase_text("flash.dependencies_unavailable"), status: :service_unavailable
+  end
+
+  # Only fixed diagnostic codes and public certificate times enter presentation.
+  def readiness_display(report)
+    statuses = %w[ready preparing unreachable certificate_update_required]
+    translate_status = ->(value) { purchase_text("readiness.states.#{statuses.include?(value) ? value : 'unreachable'}") }
+    services = [report] + report.fetch("dependencies", {}).values
+    reasons = %w[rotation_pending expired expiring not_yet_valid ca_mismatch key_mismatch hostname_mismatch invalid_chain missing_tls_files invalid_tls_material tls_verification_failed tls_handshake_failed connection_failed]
+    checks = %w[initialization maintenance files storage identity tls local_state]
+    rows = %w[authority buyer seller].map do |role|
+      service = services.find { |item| item["role"] == role } || {"status" => "unreachable"}
+      codes = Array(service.dig("tls", "reasons")) + Array(service["reason"])
+      details = codes.select { |code| reasons.include?(code) }.uniq.map { |code| purchase_text("readiness.reasons.#{code}") }
+      Array(service["checks"]).each do |check|
+        details << purchase_text("readiness.checks.#{check['name']}") if !check["ready"] && checks.include?(check["name"])
+      end
+      {"role" => role, "label" => purchase_text("readiness.roles.#{role}"), "status" => translate_status.call(service["status"]), "details" => details.uniq.join(" ")}
+    end
+    certificates = services.each_with_object({}) do |service, collected|
+      value = service["certificates"]
+      next unless value.is_a?(Hash)
+      %w[ca buyer seller].each { |role| collected[role] = value[role] if value[role].is_a?(Hash) }
+    end
+    certificate_rows = %w[ca buyer seller].map do |role|
+      cert = certificates[role] || {}
+      expiry = cert["not_after"].is_a?(String) && cert["not_after"].match?(/\A\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z\z/) ? cert["not_after"] : purchase_text("readiness.unknown")
+      remaining = cert["remaining_seconds"].is_a?(Numeric) ? cert["remaining_seconds"].to_i : purchase_text("readiness.unknown")
+      update = cert.empty? ? purchase_text("readiness.unknown") : purchase_text("readiness.#{cert['update_required'] ? 'renew' : 'valid'}")
+      {"role" => role, "text" => purchase_text("readiness.certificate", role: purchase_text("readiness.roles.#{role}"), expiry: expiry, remaining: remaining, update: update)}
+    end
+    {"summary" => translate_status.call(report["status"]), "services" => rows, "certificates" => certificate_rows,
+     "checked_at" => purchase_text("readiness.checked_at", time: report["checked_at"]),
+     "operations" => report.fetch("operations", {}), "failure" => purchase_text("readiness.poll_failed"),
+     "checking" => purchase_text("readiness.checking")}
+  end
 
   def selected_locale
     candidate = params.key?(:locale) ? params[:locale] : session[:locale]

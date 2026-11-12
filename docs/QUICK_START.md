@@ -99,3 +99,7 @@ Long content is bounded to 400 days while proofs remain short-lived. This local 
 Applications own authentication, consent, protected approvals, current independent trust, revocation, orders/challenges/time, durable shared one-use state, final execution permission, processor idempotency and reconciliation. Unknown effects remain pending. Timeout or Error does not automatically reopen execution or refund allowance. Never reuse these synthetic fixtures as production trust.
 
 For test commands and published-gem provenance, return to the [README](../README.md). See [Localization](LOCALIZATION.md) for maintaining both languages. Historical [published 1.6.0 evidence (Japanese)](PUBLISHED_160.md) is kept separately from verification of the current change.
+
+### Purchase demo readiness and TLS renewal
+
+From the repository root, keep `COMPOSE_PROJECT_NAME=ap2-purchase-demo` unchanged. Run `sh bin/purchase-demo start`, then `status` or `diagnose`. Use `rotate` to stop, renew the complete TLS set without deleting purchase data, and verify before reuse; use `recover` after interruption. Never use `down -v` for renewal. See [commands, retained data and recovery](PURCHASE_DEMO.md).

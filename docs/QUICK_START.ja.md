@@ -99,3 +99,7 @@ docker run --rm --network none --cpus 1 --memory 512m --pids-limit 128 \
 本人認証・同意・保護された承認・独立した最新信頼情報・失効・注文／challenge／時刻・共有永続単発利用状態・最終実行許可・processorの冪等性と照合はアプリの責任です。結果不明は保留のまま扱います。timeoutやErrorによって実行権限や枠が自動復活することはありません。合成fixtureを本番の信頼情報に使わないでください。
 
 テストコマンドと公開Gemの出所は[README](../README.ja.md)、翻訳の保守は[多言語対応](LOCALIZATION.ja.md)を参照してください。[公開1.6.0検証記録（日本語・過去の実測）](PUBLISHED_160.md)は、今回の変更の検証と分けて保持しています。
+
+### 購入デモの起動準備とTLS更新
+
+リポジトリ直下で `COMPOSE_PROJECT_NAME=ap2-purchase-demo` を毎回同じ値にし、`sh bin/purchase-demo start` で起動、`status` または `diagnose` で診断します。`rotate` は全役割を停止してTLS一式を更新し、購入データを保持して実通信を確認します。中断後は `recover` を使います。更新に `down -v` は使いません。[最短コマンド・保持するデータ・失敗時の復旧](PURCHASE_DEMO.ja.md)を参照してください。

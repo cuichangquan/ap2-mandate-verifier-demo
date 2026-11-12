@@ -166,3 +166,7 @@ See the [support contract](https://github.com/cuichangquan/ap2-mandate-verifier/
 ### Historical candidate builds
 
 Normal usage needs only the published-gem Dockerfiles above. `Dockerfile.candidate`, `Gemfile.candidate` and their separate lockfile remain a historical **0.6.0** source-comparison path, not a current 1.6.0 build recipe or evidence of published gem bytes. Do not mix that lockfile into normal startup. Earlier records remain available in [History (English/Japanese)](docs/HISTORY.md), [0.6.0 multi-item candidate (Japanese)](docs/MULTI_ITEM_CANDIDATE.md) and [older candidates (English, with Japanese scenario labels)](CANDIDATE.md).
+
+### Purchase demo readiness and TLS renewal
+
+From the repository root, keep `COMPOSE_PROJECT_NAME=ap2-purchase-demo` unchanged. Run `sh bin/purchase-demo start`, then `status` or `diagnose`. Use `rotate` to stop, renew the complete TLS set without deleting purchase data, and verify before reuse; use `recover` after interruption. Never use `down -v` for renewal. See [commands, retained data and recovery](docs/PURCHASE_DEMO.md).

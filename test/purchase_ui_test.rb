@@ -58,6 +58,18 @@ class PurchaseUITest < Minitest::Test
     end
   end
 
+  class FakeReadiness
+    attr_accessor :value
+    def initialize
+      @value = {"role" => "authority", "status" => "ready", "ready" => true,
+        "checked_at" => "2026-11-12T00:00:00Z", "checks" => [], "certificates" => {},
+        "dependencies" => %w[buyer seller].to_h { |role| [role, {"role" => role, "status" => "ready", "ready" => true, "checks" => [], "certificates" => {}}] },
+        "operations" => %w[approve provision run status recover history diagnose].to_h { |operation| [operation, true] }}
+    end
+    def report = value
+    def local = value.reject { |key, _| %w[dependencies operations].include?(key) }
+  end
+
   class Browser
     attr_reader :cookie
     def initialize(app)
@@ -82,6 +94,10 @@ class PurchaseUITest < Minitest::Test
   end
 
   def setup
+    @readiness = FakeReadiness.new
+    @old_readiness = PurchaseDemo::Readiness.method(:new)
+    readiness = @readiness
+    PurchaseDemo::Readiness.define_singleton_method(:new) { |**_options| readiness }
     @service = FakeAuthority.new
     @old_authority = PurchaseDemo::Runtime.method(:authority)
     service = @service
@@ -92,6 +108,7 @@ class PurchaseUITest < Minitest::Test
   end
 
   def teardown
+    PurchaseDemo::Readiness.define_singleton_method(:new, @old_readiness)
     PurchaseDemo::Runtime.define_singleton_method(:authority, @old_authority)
   end
 
@@ -246,4 +263,85 @@ class PurchaseUITest < Minitest::Test
     response = Rack::MockRequest.new(PurchaseDemo::AuthorityApplication).get("http://untrusted.example/")
     assert_equal 403, response.status
   end
+  def test_readiness_checks_and_script_never_perform_purchase_operations
+    original = Marshal.dump(@service.records)
+    3.times do
+      response = @browser.get("/ready?locale=ja")
+      assert_equal 200, response.status
+      body = JSON.parse(response.body)
+      assert_equal "利用可能", body.dig("display", "summary")
+      assert_equal "no-store", response["cache-control"]
+    end
+    assert_equal 200, @browser.get("/health").status
+    script = @browser.get("/readiness.js")
+    assert_equal 200, script.status
+    assert_includes script["content-type"], "application/javascript"
+    assert_includes script.body, "method: 'GET'"
+    assert_includes script.body, "controller.abort()"
+    assert_includes script.body, "control.disabled = true"
+    assert_includes script.body, "visibilitychange"
+    refute_includes script.body, "innerHTML"
+    refute_includes script.body, "method: 'POST'"
+    assert_empty @service.calls
+    assert_empty @service.status_calls
+    assert_equal original, Marshal.dump(@service.records)
+  end
+
+  def test_stale_form_and_direct_post_are_guarded_without_losing_draft_or_history
+    @readiness.value["operations"]["approve"] = false
+    denied = @browser.post("/approve", @form)
+    assert_equal 503, denied.status
+    assert_includes denied.body, "No new operation was started"
+    assert_empty @service.calls
+    page = @browser.get("/")
+    assert_match(/data-operation="approve" disabled/, page.body)
+    assert_equal @form["draft_id"], form(page)["draft_id"]
+    @readiness.value["operations"]["approve"] = true
+    approve
+    id = @form["draft_id"]
+    page = @browser.get("/purchases/#{id}")
+    before = Marshal.dump(@service.records)
+    calls = @service.calls.dup
+    @service.status_calls.clear
+    %w[run recover status].each { |action| @readiness.value["operations"][action] = false }
+    %w[run recover].each do |action|
+      response = @browser.post("/purchases/#{id}/#{action}", {"authenticity_token" => form(page)["authenticity_token"]})
+      assert_equal 503, response.status
+    end
+    cached = @browser.get("/purchases/#{id}?refresh=1")
+    assert_equal 200, cached.status
+    assert_includes cached.body, id
+    assert_empty @service.status_calls
+    assert_equal calls, @service.calls
+    assert_equal before, Marshal.dump(@service.records)
+    %w[run recover status].each { |action| assert_match(/data-operation="#{action}" disabled/, cached.body) }
+    %w[run recover status].each { |action| @readiness.value["operations"][action] = true }
+    assert_equal 200, @browser.get("/ready").status
+    assert_equal calls, @service.calls
+    assert_empty @service.status_calls
+  end
+
+  def test_diagnostics_translate_failure_reasons_and_public_expiry_without_secrets
+    @readiness.value["status"] = "certificate_update_required"
+    @readiness.value["ready"] = false
+    @readiness.value["certificates"] = {"ca" => {"not_after" => "2026-11-19T00:00:00Z", "remaining_seconds" => -60, "update_required" => true}}
+    @readiness.value["dependencies"]["buyer"].merge!("status" => "certificate_update_required", "ready" => false,
+      "tls" => {"reasons" => %w[expired key_mismatch PRIVATE_SECRET]})
+    %w[en ja].each do |locale|
+      response = @browser.get("/ready?locale=#{locale}")
+      assert_equal 503, response.status
+      display = JSON.parse(response.body).fetch("display")
+      assert_equal I18n.t("purchase.readiness.states.certificate_update_required", locale: locale), display["summary"]
+      assert_includes display.fetch("services")[1]["details"], I18n.t("purchase.readiness.reasons.key_mismatch", locale: locale)
+      refute_includes JSON.generate(display), "PRIVATE_SECRET"
+      assert_includes display.fetch("certificates")[0]["text"], "2026-11-19T00:00:00Z"
+      assert_includes display.fetch("certificates")[0]["text"], "-60"
+      page = @browser.get("/?locale=#{locale}")
+      assert_equal 200, page.status
+      refute_includes page.body, "PRIVATE_SECRET"
+      refute_match(/translation missing/i, page.body)
+    end
+    assert_empty @service.calls
+  end
+
 end
