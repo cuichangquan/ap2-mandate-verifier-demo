@@ -51,7 +51,7 @@ GEM
       protocol-http (~> 0.62)
       rack (~> 3.0)
       sqlite3
-    ap2_mandate_verifier (1.6.0)
+    ap2_mandate_verifier (1.7.0)
       base64 (= 0.3.0)
       digest (= 3.2.1)
       json (= 2.19.9)
@@ -263,7 +263,7 @@ PLATFORMS
 DEPENDENCIES
   a2a-rails (= 0.3.0)
   actionpack (= 8.1.4.1)
-  ap2_mandate_verifier (= 1.6.0)
+  ap2_mandate_verifier (= 1.7.0)
   minitest (= 5.27.0)
   puma (= 6.6.1)
   railties (= 8.1.4.1)
@@ -276,7 +276,7 @@ CHECKSUMS
   activejob (8.1.4.1) sha256=82c4c9311ea1016d5f7f134a0c5f9b6527cad5a6237f5f3f60aa17984ef36229
   activesupport (8.1.4.1) sha256=16ac4f341ca65c85a1fcdb8ac73f68891aae9e3c4a6f9c3a27daed8b00017ed7
   agent2agent (2.0.0) sha256=4ba5bf1a5486fa78be62541533e46cea1a36041c5df0a8328da9aafcf4e5718d
-  ap2_mandate_verifier (1.6.0) sha256=62de85123e1379c538c9c4302b71a9c55c590162591169a4e335aaa03a8991f8
+  ap2_mandate_verifier (1.7.0) sha256=2a3da0706313fd6ef6bf05dd0aed2f05899a5690b42568b3ebd814b41ad17140
   async (2.46.0) sha256=34f984733dbf63a997376346451ec995e858cacc3105e86ccfeaf8877b4f490b
   async-http (0.105.0) sha256=55191969d5cf61be5fbc2e0aadd51d77085318ba192a5ff5e12e3aba0826906a
   async-http-faraday (0.24.0) sha256=eb0bf50b19c9784ee39b6bd0b424964269e1b7d5be58392e32fab7a300e327eb

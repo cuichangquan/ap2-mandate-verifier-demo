@@ -16,7 +16,7 @@
   </defs>
   <rect width="1200" height="900" fill="#f5f8fc"/>
   <text class="title" x="40" y="45">購入Agent × 販売Agent / AP2 + A2A</text>
-  <text class="body" x="40" y="76">Synthetic local demo · 公開Gem AP2 SDK 1.6.0 / a2a-rails 0.3.0 · No real payments</text>
+  <text class="body" x="40" y="76">Synthetic local demo · 公開Gem AP2 SDK 1.7.0 / a2a-rails 0.3.0 · No real payments</text>
 
   <rect class="box" x="40" y="105" width="1120" height="80" rx="12" fill="#ffffff"/>
   <text class="heading" x="65" y="138">ユーザー / User</text>

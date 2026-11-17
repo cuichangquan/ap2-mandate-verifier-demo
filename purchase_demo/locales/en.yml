@@ -196,9 +196,9 @@
         "empty": "No detailed Gem diagnostic was recorded. Older saved results and the published Gem may have none. This does not change the four stage results.",
         "source": "Gem fact: a failed check or observed state, not a proven root cause.",
         "code": "Ruby for this operation",
-        "scope": "Abbreviated calls from seller.rb, buyer.rb and protocol.rb. The application supplies independent trust, order, clock, saved challenge and durable store. Candidate APIs are unavailable on the normal published 1.6.0 path.",
+        "scope": "Abbreviated calls from seller.rb, buyer.rb and protocol.rb. The application supplies independent trust, order, clock, saved challenge and durable store. Diagnostic APIs are available on the published 1.7.0 path. Older saved results may lack diagnostics.",
         "guidance": "Application guidance: preserve the purchase ID and original evidence. Unknown results, nil execution and genuine Error Receipts do not authorize another payment or release reserved capacity. Opening code changes no purchase state.",
-        "all_code": "Public API call map (candidate APIs included)",
+        "all_code": "Public API call map",
         "labels": {
           "operation": "Operation",
           "stage": "Stage",

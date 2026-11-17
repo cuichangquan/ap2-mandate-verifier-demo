@@ -162,7 +162,7 @@ Approval is saved before these four stages. Authority holds canonical approval d
 
 ## 6. Protocol and code map
 
-Published dependencies are **`ap2_mandate_verifier = 1.6.0`** and **`a2a-rails = 0.3.0`**, using `Gemfile.purchase` and its lockfile. Neither SDK source overlays nor gem modifications are used.
+Published dependencies are **`ap2_mandate_verifier = 1.7.0`** and **`a2a-rails = 0.3.0`**, using `Gemfile.purchase` and its lockfile. Neither SDK source overlays nor gem modifications are used.
 
 - The AP2 reference is pinned to **v0.2.0, commit `b4587ac1d055888a73b4b21750973cffba961793`**. Synthetic results do not establish general AP2 conformance or evidence from a real issuer.
 - Checkout uses `AP2MandateVerifier::ConditionalCheckout::PROFILE_REF` (`ap2.checkout.single_merchant_multi_item`). This scenario has one product, tea, while using the profile's quantity requirements.

@@ -162,7 +162,7 @@ docker compose -f compose.purchase.yml down -v
 
 ## 6. プロトコルとコードの対応
 
-使用する公開Gemは`ap2_mandate_verifier = 1.6.0`と`a2a-rails = 0.3.0`です。`Gemfile.purchase` / lockfileを使い、SDKソース差し替えやGemの変更はしません。
+使用する公開Gemは`ap2_mandate_verifier = 1.7.0`と`a2a-rails = 0.3.0`です。`Gemfile.purchase` / lockfileを使い、SDKソース差し替えやGemの変更はしません。
 
 - AP2の参照元は**v0.2.0、commit `b4587ac1d055888a73b4b21750973cffba961793`固定**です。合成デモの結果を一般的なAP2準拠や実Issuer由来の証明として扱いません。
 - Checkoutは`AP2MandateVerifier::ConditionalCheckout::PROFILE_REF`（`ap2.checkout.single_merchant_multi_item`）のmulti-item条件付きprofileです。この例の商品種類はお茶1種ですが、同profileの数量要件を使います。

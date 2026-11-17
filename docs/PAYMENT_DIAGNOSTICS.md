@@ -1,5 +1,7 @@
 # Payment diagnostics: current result → Ruby call
 
+The post-publication normal path uses 1.7.0. The candidate-only Dockerfile and recipe below are historical reproduction instructions for pre-publication commit `e3fbb0eba4891ad7bb74112fdd3a0dafa18aed55`. Use a separate checkout of that commit to reproduce them, not the normal 1.7.0 base image. The current switch and its verification limits are recorded below; publication and deployment remain separate actions.
+
 [日本語](PAYMENT_DIAGNOSTICS.ja.md)
 
 This is Issue #35 **A3**, not a repeat of completed A1 (integration/recovery examples)
@@ -10,15 +12,15 @@ The result page keeps existing reason/status codes and adds optional catalog dia
 operation, stage, reason, field and English/Japanese checks. Each links to an inert,
 abbreviated Ruby example matching `seller.rb`, `buyer.rb` and `protocol.rb`. Expanding
 code, changing language or reloading cached history does not execute, recover or query
-a purchase. The normal published 1.6.0 route and old saved results have no new diagnostics;
-that is not success or failure evidence. The complete call map labels candidate-only APIs.
+a purchase. The normal published 1.7.0 path exposes diagnostics. Older 1.6.0 saved results may lack them;
+absence is not success or failure evidence.
 
 ## Facts versus application advice
 
 `Payment.verify(**inputs).diagnostic` explains a confirmed check, not a root cause.
 `Service#accept`, `lookup`, `finish` and `reconcile` results can carry diagnostics.
-The candidate path calls `start_with_diagnostic` **once**, reads `.execution` and
-`.diagnostic`; the published fallback calls legacy `start` **once**. Neither path
+The published 1.7.0 path calls `start_with_diagnostic` **once**, reads `.execution` and
+`.diagnostic`; compatibility with older Gems uses legacy `start` **once**. Neither path
 replays verification or execution just to produce a display.
 
 ```ruby
@@ -40,7 +42,7 @@ installed Gem catalog. Losing a diagnostic never changes existing status decisio
 A timeout is an application observation; it is **not** relabeled as a Gem-diagnosed cause.
 Unknown outcomes, nil execution and genuine Error do not authorize retry or capacity release.
 
-## Candidate package route (not the normal demo)
+## Historical candidate package route (pre-publication checkout only)
 
 Keep the reviewed candidate package, exact source commit, version, byte count and SHA256
 from the core candidate report together. Never substitute a rebuild without revalidating.
@@ -76,15 +78,18 @@ Run the normal published CI separately. Record exact candidate and demo commit, 
 architecture, Ruby version, test results and anything not run. In-process role tests do
 not prove HTTPS, browser visual layout or native ARM64 portability.
 
-## After owner-approved publication
+## Published 1.7.0 switch
 
-Do not publish or switch normal dependencies in this PR. Verify the downloaded public
-Gem SHA256 matches the reviewed candidate, then prepare a separate reviewed change to:
-`Gemfile`, `Gemfile.lock`, `Gemfile.purchase`, `Gemfile.purchase.lock`, `Dockerfile`,
-`Dockerfile.purchase`, installed-Gem checks and current README/Quick Start version claims.
-Update AP2 package byte/hash guards to the **verified public bytes**; preserve historical
-candidate and evidence files explicitly as history. Re-run normal native ARM64/AMD64 CI
-and HTTPS scenarios against the public installed Gem before merging that switch.
-No tag, GitHub Release, deployment or ordinary dependency switch is performed here.
+The owner-approved switch updates the two ordinary Gemfiles/lockfiles, Dockerfiles,
+installed-package audit, published examples and current English/Japanese instructions.
+The exact public archive is 208,384 bytes, SHA256
+`2a3da0706313fd6ef6bf05dd0aed2f05899a5690b42568b3ebd814b41ad17140`,
+matching the reviewed candidate. Both ordinary images verify this archive and compare
+all 75 installed payloads; no source checkout or rebuild substitutes for installation.
+Historical candidate files and evidence remain unchanged.
 
-Use a unique image tag via `PAYMENT_DIAGNOSTICS_IMAGE` and a free `PURCHASE_UI_PORT` (example: 3117) for parallel QA. Do not stop or replace an existing stack.
+The existing native ARM64/AMD64 CI must pass for the exact switch commit before merge.
+It exercises the installed public Gem, diagnostics, English/Japanese UI and HTTPS
+purchase/recovery flows. Current CI results belong to PR #39, not the old candidate
+record. Updating the draft does not merge or deploy it and does not replace a running
+stack. Tags, GitHub Release and publication are not performed by this demo change.
