@@ -77,22 +77,31 @@ module PurchaseDemo
         # Previously consumed approval remains the SAME purchase even after proof
         # expiry. Lookup never grants a new Ticket or calls the processor.
         previous = service.lookup(**scope(row))
-        return result(row, previous) if previous.processor_key
+        return result(row, previous, operation: "lookup") if previous.processor_key
         inputs = verification(row, wires)
         checked = M::Payment.verify(**inputs)
-        return reject(row, "rejected", "ap2_rejected") unless checked.verified?
+        diagnostics = Diagnostics.append([], "payment", checked)
+        return reject(row, "rejected", "ap2_rejected", diagnostics: diagnostics) unless checked.verified?
         return reject(row, "verified", "application_rejected") unless application_allows?(row)
         ledger.authorize!(**scope(row), mode: :conditional, profile_ref: M::Payment::PROFILE_REF,
           checkout: row.fetch("order"), payment: Protocol.payment_details(checkout_jwt: row.fetch("checkout_jwt"), public_keys: keys),
           receipt_context: receipt_context(row))
         accepted = service.accept(**scope(row), mode: :conditional, verification_inputs: inputs)
-        return result(row, accepted) unless accepted.ticket
+        diagnostics = Diagnostics.append(diagnostics, "accept", accepted)
+        return result(row, accepted, operation: "accept", diagnostics: diagnostics) unless accepted.ticket
         # Independently read current protected state and clock immediately before
         # the SDK CAS. No mutation/revocation endpoint exists in this local demo.
         fresh = record(id)
         return reject(row, "verified", "approval_changed", app_status: "reservation_held") unless application_allows?(fresh)
-        execution = service.start(ticket: accepted.ticket, verification_inputs: verification(fresh, wires))
-        return result(row, service.lookup(**scope(row))) unless execution
+        start_inputs = {ticket: accepted.ticket, verification_inputs: verification(fresh, wires)}
+        if service.respond_to?(:start_with_diagnostic)
+          started = service.start_with_diagnostic(**start_inputs)
+          execution = started.execution
+          diagnostics = Diagnostics.append(diagnostics, "start", started)
+        else
+          execution = service.start(**start_inputs)
+        end
+        return result(row, service.lookup(**scope(row)), diagnostics: diagnostics) unless execution
         receipt = Protocol.receipt(closed_sd_jwt: execution.closed_sd_jwt, payment_id: id,
           merchant_key: key, now: now, outcome: row.fetch("scenario") == "error" ? "Error" : "Success")
         @store.process_once(id: id, processor_key: execution.processor_key,
@@ -100,10 +109,10 @@ module PurchaseDemo
         if row.fetch("scenario") == "timeout"
           service.unknown(ticket: accepted.ticket)
           sleep 3 # Real response timeout AFTER durable mock side effect.
-          return result(row, service.lookup(**scope(row)))
+          return result(row, service.lookup(**scope(row)), diagnostics: diagnostics)
         end
         final = service.finish(ticket: accepted.ticket, receipt_jwt: receipt, verified_at: now)
-        result(row, final)
+        result(row, final, operation: "finish", diagnostics: diagnostics)
       end
     rescue ArgumentError, KeyError, M::PaymentAcceptance::Conflict
       reject(row, "rejected", "binding_mismatch")
@@ -118,19 +127,22 @@ module PurchaseDemo
       with_acceptance do |_ledger, service|
         old = service.lookup(**scope(row))
         processor = @store.processor(id)
+        operation = "lookup"
         if processor && %i[pending unknown].include?(old.status)
+          operation = "reconcile"
           old = service.reconcile(**scope(row), receipt_jwt: processor.fetch("receipt_jwt"), verified_at: now)
         end
-        result(row, old)
+        result(row, old, operation: operation)
       end
     end
-    def reject(row, ap2, reason, app_status: "not_accepted")
+    def reject(row, ap2, reason, app_status: "not_accepted", diagnostics: [])
       rejected = summary(row).merge("ap2_status" => ap2, "app_status" => app_status,
-        "payment_status" => "not_started", "execution_count" => 0, "reason" => reason)
+        "payment_status" => "not_started", "execution_count" => 0, "reason" => reason,
+        "diagnostics" => Diagnostics.normalize(diagnostics))
       @store.update(row.fetch("id")) { |r| r.merge("summary" => rejected) }
       {"summary" => rejected}
     end
-    def result(row, accepted)
+    def result(row, accepted, operation: "lookup", diagnostics: [])
       processor = @store.processor(row.fetch("id"))
       state = accepted.status.to_s
       if !accepted.processor_key && !processor && state == "rejected" && row["summary"]
@@ -143,7 +155,8 @@ module PurchaseDemo
         "app_status" => started ? "accepted_no_retry" : (uncertain ? "lookup_required" : "approved_pending"),
         "payment_status" => finished ? (state == "receipt_success" ? "mock_success" : "mock_error") : (started || uncertain ? "response_unknown" : "not_started"),
         "execution_count" => processor ? processor.fetch("execution_count") : 0,
-        "reason" => finished ? "result_saved" : "purchase_retained"),
+        "reason" => finished ? "result_saved" : "purchase_retained",
+        "diagnostics" => Diagnostics.append(diagnostics, operation, accepted)),
         "acceptance_state" => state}
       if accepted.receipt_jwt
         receipt = accepted.receipt_jwt

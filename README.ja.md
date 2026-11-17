@@ -170,3 +170,7 @@ sh test/purchase_docker_validation.sh
 ### 購入デモの起動準備とTLS更新
 
 リポジトリ直下で `COMPOSE_PROJECT_NAME=ap2-purchase-demo` を毎回同じ値にし、`sh bin/purchase-demo start` で起動、`status` または `diagnose` で診断します。`rotate` は全役割を停止してTLS一式を更新し、購入データを保持して実通信を確認します。中断後は `recover` を使います。更新に `down -v` は使いません。[最短コマンド・保持するデータ・失敗時の復旧](docs/PURCHASE_DEMO.ja.md)を参照してください。
+
+## Payment結果の診断と候補Gem検証
+
+[Payment結果の診断と候補Gem検証](docs/PAYMENT_DIAGNOSTICS.ja.md)

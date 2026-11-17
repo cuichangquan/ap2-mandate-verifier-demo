@@ -54,6 +54,7 @@ module PurchaseDemo
     def list = @store.list.map { |row| summary(row) }
     def save_summary(id, result)
       sanitized = result.fetch("summary").slice("offer", "ap2_status", "app_status", "payment_status", "receipt_status", "execution_count", "reason")
+      sanitized["diagnostics"] = Diagnostics.normalize(result.dig("summary", "diagnostics"))
       summary(@store.update(id) { |r| r.merge("summary" => sanitized) })
     end
   end

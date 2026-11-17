@@ -170,3 +170,7 @@ Normal usage needs only the published-gem Dockerfiles above. `Dockerfile.candida
 ### Purchase demo readiness and TLS renewal
 
 From the repository root, keep `COMPOSE_PROJECT_NAME=ap2-purchase-demo` unchanged. Run `sh bin/purchase-demo start`, then `status` or `diagnose`. Use `rotate` to stop, renew the complete TLS set without deleting purchase data, and verify before reuse; use `recover` after interruption. Never use `down -v` for renewal. See [commands, retained data and recovery](docs/PURCHASE_DEMO.md).
+
+## Payment result diagnostics and candidate package verification
+
+[Payment result diagnostics and candidate package verification](docs/PAYMENT_DIAGNOSTICS.md)

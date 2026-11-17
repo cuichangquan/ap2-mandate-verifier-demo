@@ -190,6 +190,22 @@
           "local_state": "Local readiness could not be confirmed."
         },
         "certificate_source": "Saved certificate metadata is shown below. Live TLS and service readiness are checked separately above."
+      },
+      "diagnostics": {
+        "title": "Gem diagnostics and Ruby calls",
+        "empty": "No detailed Gem diagnostic was recorded. Older saved results and the published Gem may have none. This does not change the four stage results.",
+        "source": "Gem fact: a failed check or observed state, not a proven root cause.",
+        "code": "Ruby for this operation",
+        "scope": "Abbreviated calls from seller.rb, buyer.rb and protocol.rb. The application supplies independent trust, order, clock, saved challenge and durable store. Candidate APIs are unavailable on the normal published 1.6.0 path.",
+        "guidance": "Application guidance: preserve the purchase ID and original evidence. Unknown results, nil execution and genuine Error Receipts do not authorize another payment or release reserved capacity. Opening code changes no purchase state.",
+        "all_code": "Public API call map (candidate APIs included)",
+        "labels": {
+          "operation": "Operation",
+          "stage": "Stage",
+          "reason": "Reason",
+          "field": "Field",
+          "hint": "Check next"
+        }
       }
     }
   }
