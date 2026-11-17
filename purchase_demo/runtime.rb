@@ -5,6 +5,7 @@ require_relative "protocol"
 require_relative "store"
 require_relative "transport"
 require_relative "summary_codes"
+require_relative "diagnostics"
 
 module PurchaseDemo
   SCENARIOS = %w[valid budget quantity tampered error timeout wrong_receipt invalid_receipt].freeze
@@ -28,7 +29,7 @@ module PurchaseDemo
         "ap2_status" => "not_run", "app_status" => "approved", "payment_status" => "not_started",
         "receipt_status" => "unverified", "execution_count" => 0, "reason" => "approval_saved"}
       summary = record.fetch("summary", {})
-      base.merge(SummaryCodes.normalize(summary.slice("offer", "ap2_status", "app_status", "payment_status", "receipt_status", "execution_count", "reason")))
+      base.merge("diagnostics" => Diagnostics.normalize(summary["diagnostics"])).merge(SummaryCodes.normalize(summary.slice("offer", "ap2_status", "app_status", "payment_status", "receipt_status", "execution_count", "reason")))
     end
   end
 

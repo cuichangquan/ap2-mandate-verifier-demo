@@ -6,6 +6,7 @@ require "securerandom"
 require "logger"
 require_relative "runtime"
 require_relative "readiness"
+require_relative "code_examples"
 
 module PurchaseDemo
   class AuthorityApplication < Rails::Application
@@ -62,7 +63,7 @@ class PurchaseAuthorityController < ActionController::Base
     "保存済みの結果を照会しました。各段階の状態をご確認ください。" => "recovered",
     "復旧照会を完了できませんでした。購入IDを維持して再度確認してください。" => "recovery_failed"
   }.freeze
-  helper_method :purchase_text, :purchase_path, :language_path, :status_text, :reason_text, :flash_text
+  helper_method :purchase_text, :purchase_path, :language_path, :status_text, :reason_text, :flash_text, :diagnostic_hint, :operation_code
   prepend_view_path File.expand_path("views", __dir__)
   protect_from_forgery with: :exception
   prepend_around_action :with_locale
@@ -223,6 +224,14 @@ class PurchaseAuthorityController < ActionController::Base
     code ? purchase_text("reasons.#{code}") : purchase_text("ui.unknown_reason")
   end
 
+  def diagnostic_hint(entry)
+    PurchaseDemo::Diagnostics.hint(entry, locale: I18n.locale)
+  end
+
+  def operation_code(operation)
+    PurchaseDemo::CodeExamples::EXAMPLES.fetch(operation)
+  end
+
   def flash_text(value)
     code = FLASH_CODES.include?(value) ? value : LEGACY_FLASH[value]
     purchase_text("flash.#{code || 'unknown'}")
@@ -275,6 +284,7 @@ class PurchaseAuthorityController < ActionController::Base
       result[key] = value.stringify_keys.slice("item", "quantity", "currency", "max_amount", "amount")
         .select { |_k, v| v.is_a?(String) || v.is_a?(Numeric) } if value.is_a?(Hash)
     end
+    result["diagnostics"] = PurchaseDemo::Diagnostics.normalize(raw["diagnostics"])
     result["purchase_id"] = id
     result
   end

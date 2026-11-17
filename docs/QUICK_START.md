@@ -1,5 +1,8 @@
 [English](QUICK_START.md) | [日本語](QUICK_START.ja.md)
 
+The normal path uses published `ap2_mandate_verifier 1.7.0`. Payment diagnostics are optional guidance; older saved results without diagnostics retain their existing decisions.
+
+
 # Try the AP2 Ruby SDK locally
 
 This walkthrough starts with the browser, then runs Checkout and Payment in Ruby and a purchase between separate agents. All keys, orders, approvals, clocks and effects are synthetic. **No real payment occurs.** See the [README](../README.md) for the complete feature map and support boundaries.

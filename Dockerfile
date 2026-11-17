@@ -6,11 +6,11 @@ FROM base-${TARGETARCH}
 WORKDIR /demo
 COPY Gemfile Gemfile.lock ./
 COPY test/installed_gem_check.rb test/installed_gem_check.rb
-RUN gem fetch ap2_mandate_verifier --version 1.6.0 && \
-    test "$(wc -c < ap2_mandate_verifier-1.6.0.gem)" -eq 186368 && \
-    echo '62de85123e1379c538c9c4302b71a9c55c590162591169a4e335aaa03a8991f8  ap2_mandate_verifier-1.6.0.gem' | sha256sum -c - && \
+RUN gem fetch ap2_mandate_verifier --version 1.7.0 && \
+    test "$(wc -c < ap2_mandate_verifier-1.7.0.gem)" -eq 208384 && \
+    echo '2a3da0706313fd6ef6bf05dd0aed2f05899a5690b42568b3ebd814b41ad17140  ap2_mandate_verifier-1.7.0.gem' | sha256sum -c - && \
     mkdir -p vendor/cache && \
-    mv ap2_mandate_verifier-1.6.0.gem vendor/cache/ && \
+    mv ap2_mandate_verifier-1.7.0.gem vendor/cache/ && \
     BUNDLE_FROZEN=true bundle install && \
     cp Gemfile.lock /tmp/resolved-Gemfile.lock && \
     bundle exec ruby test/installed_gem_check.rb

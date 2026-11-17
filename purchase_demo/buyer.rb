@@ -66,13 +66,14 @@ module PurchaseDemo
     end
     def consume(row, result)
       public_result = result.fetch("summary").slice("ap2_status", "app_status", "payment_status", "execution_count", "reason")
-      next_summary = summary(row).merge(public_result)
+      next_summary = summary(row).merge(public_result).merge("diagnostics" => Diagnostics.normalize(result.dig("summary", "diagnostics")))
       receipt = result["receipt_jwt"]
       if receipt
         approval = row.fetch("approval")
         context = Protocol.receipt_context(payment_id: row.fetch("id"), merchant_public_key_pem: keys.fetch(:merchant),
           not_before: approval.fetch("issued_at"), not_after: approval.fetch("issued_at") + 86_400)
         checked = Protocol.verify_receipt(receipt_jwt: receipt, closed_sd_jwt: row.fetch("wires").fetch("payment_closed"), context: context, now: now)
+        next_summary["diagnostics"] = Diagnostics.append(next_summary["diagnostics"], "receipt", checked)
         next_summary["payment_status"] = if checked.verified?
           checked.payment_succeeded? ? "mock_success_verified" : "mock_error_verified"
         else

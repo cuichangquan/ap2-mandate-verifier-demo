@@ -1,5 +1,8 @@
 [English](QUICK_START.md) | [日本語](QUICK_START.ja.md)
 
+通常経路は公開済み `ap2_mandate_verifier 1.7.0` を使用します。Payment診断は任意の補助情報です。古い保存結果に診断がなくても、既存の判定は変わりません。
+
+
 # AP2 Ruby SDKをローカルで試す
 
 このガイドではブラウザから始め、RubyのCheckout・Payment、別々のAgent間での購入へ進みます。鍵・注文・承認・時計・実行結果はすべて合成です。**実際の決済は行いません。** 機能一覧と対応範囲は[README](../README.ja.md)を参照してください。

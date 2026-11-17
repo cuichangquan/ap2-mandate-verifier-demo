@@ -416,17 +416,33 @@ class PurchaseRuntimeTest < Minitest::Test
   end
 
   def test_ui_projection_excludes_keys_nonces_and_signed_wires
-    id = approve
-    output = run_purchase(id)
-    text = JSON.generate(output)
-    assert_equal %w[ap2_status app_status approval execution_count offer payment_status purchase_id reason receipt_status scenario].sort, output.keys.sort
-    %w[authority buyer seller].each do |role|
-      refute text.include?(@private.fetch(role).private_to_pem), "private key in public summary"
-      @stores.fetch(role).read(id).each do |name, value|
-        refute text.include?(value), "protected value in public summary" if %w[nonce checkout_jwt saved_challenge].include?(name)
+    %w[valid error].each do |scenario|
+      id = approve(scenario)
+      output = run_purchase(id)
+      text = JSON.generate(output)
+      assert_equal %w[ap2_status app_status approval diagnostics execution_count offer payment_status purchase_id reason receipt_status scenario].sort, output.keys.sort
+      diagnostics = output.fetch("diagnostics")
+      assert_instance_of Array, diagnostics
+      if AP2MandateVerifier::Diagnostic.respond_to?(:payment_flow) && scenario == "error"
+        refute_empty diagnostics, "genuine Error Receipt should exercise the nested diagnostic projection"
       end
+      assert_empty diagnostics unless AP2MandateVerifier::Diagnostic.respond_to?(:payment_flow)
+      diagnostics.each do |diagnostic|
+        assert_instance_of Hash, diagnostic
+        assert_equal %w[field operation reason stage], diagnostic.keys.sort
+        assert_includes D::Diagnostics::OPERATIONS, diagnostic.fetch("operation")
+        assert_equal D::Diagnostics::STAGES.fetch(diagnostic.fetch("operation"), "payment_acceptance"), diagnostic.fetch("stage")
+        assert_nil diagnostic.fetch("field")
+        assert_equal diagnostic, D::Diagnostics.canonical(diagnostic), "only closed-catalog identities may cross the public boundary"
+      end
+      %w[authority buyer seller].each do |role|
+        refute text.include?(@private.fetch(role).private_to_pem), "private key in public summary"
+        @stores.fetch(role).read(id).each do |name, value|
+          refute text.include?(value), "protected value in public summary" if %w[nonce checkout_jwt saved_challenge].include?(name)
+        end
+      end
+      @stores.fetch("buyer").read(id).fetch("wires").each_value { |wire| refute text.include?(wire), "signed wire in public summary" }
+      refute text.match?(/PRIVATE KEY|receipt_jwt|processor_key|checkout_open|payment_closed/), "protected field in public summary"
     end
-    @stores.fetch("buyer").read(id).fetch("wires").each_value { |wire| refute text.include?(wire), "signed wire in public summary" }
-    refute text.match?(/PRIVATE KEY|receipt_jwt|processor_key|checkout_open|payment_closed/), "protected field in public summary"
   end
 end

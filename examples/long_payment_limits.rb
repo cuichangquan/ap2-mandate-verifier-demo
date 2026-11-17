@@ -1,8 +1,8 @@
 # frozen_string_literal: true
-# Source-checkout supplement to published 1.6.0; no SDK source overlay.
+# Source-checkout supplement to published 1.7.0; no SDK source overlay.
 # All orders, approvals, keys and clocks are synthetic. No payment is performed.
-gem "ap2_mandate_verifier", "= 1.6.0"
-spec = Gem::Specification.find_by_name("ap2_mandate_verifier", "1.6.0")
+gem "ap2_mandate_verifier", "= 1.7.0"
+spec = Gem::Specification.find_by_name("ap2_mandate_verifier", "1.7.0")
 require File.join(spec.full_gem_path, "examples/long_payment_acceptance.rb")
 
 module LongPaymentLimitsExample

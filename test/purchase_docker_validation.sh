@@ -4,6 +4,9 @@ set -eu
 # selection. This helper never removes volumes or shared images/cache.
 COMPOSE="docker compose -f compose.purchase.yml"
 $COMPOSE exec -T authority timeout 180 sh -c '
+  bundle exec ruby test/purchase_diagnostics_test.rb &&
+  bundle exec ruby test/purchase_diagnostics_runtime_test.rb -n /test_diagnostics_/ &&
+  bundle exec ruby test/purchase_diagnostics_ui_test.rb -n /test_diagnostics_/ &&
   bundle exec ruby test/purchase_protocol_test.rb &&
   bundle exec ruby test/purchase_transport_test.rb &&
   bundle exec ruby test/purchase_setup_test.rb &&

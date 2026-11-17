@@ -1,8 +1,8 @@
 [English](README.md) | [日本語](README.ja.md)
 
-# AP2 Ruby SDK 1.6.0: local learning demo
+# AP2 Ruby SDK 1.7.0: local learning demo
 
-Try signed purchase approvals, Checkout and Payment Mandates, and Receipts with the published **ap2_mandate_verifier 1.6.0** gem. The browser demos and Ruby examples show what an agent may purchase, how a merchant verifies that permission, and how the buyer checks the reported result.
+Try signed purchase approvals, Checkout and Payment Mandates, and Receipts with the published **ap2_mandate_verifier 1.7.0** gem. The browser demos and Ruby examples show what an agent may purchase, how a merchant verifies that permission, and how the buyer checks the reported result.
 
 **All data, keys and payment effects are synthetic. No real money moves. Successful verification is not a successful payment.** The SDK is framework-independent; only this repository's browser interfaces use Rails.
 
@@ -66,7 +66,7 @@ The standard demo uses host port 3000 and the purchase demo uses 3100, so they c
 
 ## Run the A2A × AP2 purchase demo
 
-This separate Compose stack uses published `ap2_mandate_verifier 1.6.0` and `a2a-rails 0.3.0` without modifying either gem. Authority, buyer and seller run in separate processes; agent communication uses real local HTTPS.
+This separate Compose stack uses published `ap2_mandate_verifier 1.7.0` and `a2a-rails 0.3.0` without modifying either gem. Authority, buyer and seller run in separate processes; agent communication uses real local HTTPS.
 
 ```sh
 export COMPOSE_PROJECT_NAME=ap2-purchase-demo
@@ -155,9 +155,9 @@ For locale behavior, translation updates, legacy stored Japanese values and the 
 
 ## Pinned environment and provenance
 
-The demo pins MRI **4.0.9**, Bundler **4.0.20**, railties/actionpack **8.1.4.1**, Puma **6.6.1** and Minitest **5.27.0**. The verifier is **1.6.0**, with JSON **2.19.9**, JWT **3.3.0**, base64 **0.3.0**, OpenSSL gem **4.0.2** and Digest **3.2.1**. Architecture-specific official Ruby digests and frozen lockfiles are retained. Standalone SDK support for MRI 3.4.12/4.0.9 is separate from this Rails demo's fixed MRI 4.0.9 environment; other native OS/Ruby combinations are not claimed here. Rails compatibility defaults remain at `config.load_defaults 8.0` to isolate the framework upgrade; adopting 8.1 defaults is a separate change.
+The demo pins MRI **4.0.9**, Bundler **4.0.20**, railties/actionpack **8.1.4.1**, Puma **6.6.1** and Minitest **5.27.0**. The verifier is **1.7.0**, with JSON **2.19.9**, JWT **3.3.0**, base64 **0.3.0**, OpenSSL gem **4.0.2** and Digest **3.2.1**. Architecture-specific official Ruby digests and frozen lockfiles are retained. Standalone SDK support for MRI 3.4.12/4.0.9 is separate from this Rails demo's fixed MRI 4.0.9 environment; other native OS/Ruby combinations are not claimed here. Rails compatibility defaults remain at `config.load_defaults 8.0` to isolate the framework upgrade; adopting 8.1 defaults is a separate change.
 
-The standard Dockerfile checks the published gem's **186,368 bytes** and SHA256 `62de85123e1379c538c9c4302b71a9c55c590162591169a4e335aaa03a8991f8` before installation, then supplies those same bytes to Bundler. It checks all **68** installed/archive payloads, dependencies, Ruby requirements and loading outside the source tree. The gem is not rebuilt. Release source [`964e572`](https://github.com/cuichangquan/ap2-mandate-verifier/tree/964e572dc16d886561293cf90ddb9e2c927346bf) has the same tree `c9a9faaec045a9854fded3c1b4db375332a5fa57` as reviewed candidate `98f7325a9dd0ee06739fe95e1306abe9b1c6ee5d`. Download, provider or dependency failures stop the build rather than relaxing checksums or locks.
+The standard Dockerfile checks **208,384 bytes** and SHA256 `2a3da0706313fd6ef6bf05dd0aed2f05899a5690b42568b3ebd814b41ad17140` before installation and supplies the same archive to Bundler. It compares all **75** archive/installed payloads, dependencies, Ruby requirements and loading outside the source tree without rebuilding the Gem. The 1.6.0 publication record remains historical. Download/dependency failures stop the build; checksums and locks are not relaxed. See the [1.7.0 package verification record](docs/PUBLISHED_170.md) and PR #39 for exact-head validation evidence.
 
 `ScenarioVerifier` prepares, stores, restores and verifies signed inputs against independent current business state. It does not repair a stored binding/digest to match current values or infer trusted keys/orders from submitted data. Standard fixture clocks are fixed at `1800000000`, or `1800000101` for expiry.
 
@@ -165,8 +165,12 @@ See the [support contract](https://github.com/cuichangquan/ap2-mandate-verifier/
 
 ### Historical candidate builds
 
-Normal usage needs only the published-gem Dockerfiles above. `Dockerfile.candidate`, `Gemfile.candidate` and their separate lockfile remain a historical **0.6.0** source-comparison path, not a current 1.6.0 build recipe or evidence of published gem bytes. Do not mix that lockfile into normal startup. Earlier records remain available in [History (English/Japanese)](docs/HISTORY.md), [0.6.0 multi-item candidate (Japanese)](docs/MULTI_ITEM_CANDIDATE.md) and [older candidates (English, with Japanese scenario labels)](CANDIDATE.md).
+Normal usage needs only the published-gem Dockerfiles above. `Dockerfile.candidate`, `Gemfile.candidate` and their separate lockfile remain a historical **0.6.0** source-comparison path, not a current 1.7.0 build recipe or evidence of published gem bytes. Do not mix that lockfile into normal startup. Earlier records remain available in [History (English/Japanese)](docs/HISTORY.md), [0.6.0 multi-item candidate (Japanese)](docs/MULTI_ITEM_CANDIDATE.md) and [older candidates (English, with Japanese scenario labels)](CANDIDATE.md).
 
 ### Purchase demo readiness and TLS renewal
 
 From the repository root, keep `COMPOSE_PROJECT_NAME=ap2-purchase-demo` unchanged. Run `sh bin/purchase-demo start`, then `status` or `diagnose`. Use `rotate` to stop, renew the complete TLS set without deleting purchase data, and verify before reuse; use `recover` after interruption. Never use `down -v` for renewal. See [commands, retained data and recovery](docs/PURCHASE_DEMO.md).
+
+## Payment result diagnostics and candidate package verification
+
+[Payment result diagnostics and candidate package verification](docs/PAYMENT_DIAGNOSTICS.md)

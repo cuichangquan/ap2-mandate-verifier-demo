@@ -1,0 +1,21 @@
+# Opt-in only. First build the ordinary published purchase image unchanged.
+ARG DEMO_BASE=ap2-purchase-demo:local
+FROM ${DEMO_BASE}
+USER root
+ARG CANDIDATE_SHA256
+ARG CANDIDATE_BYTES
+ARG CANDIDATE_VERSION
+COPY candidate/payment-diagnostics.gem /tmp/payment-diagnostics.gem
+RUN case "$CANDIDATE_SHA256" in *[!0-9a-f]*|"") exit 1;; esac && \
+    test "${#CANDIDATE_SHA256}" -eq 64 && \
+    case "$CANDIDATE_BYTES" in *[!0-9]*|"") exit 1;; esac && \
+    test "$(wc -c < /tmp/payment-diagnostics.gem)" -eq "$CANDIDATE_BYTES" && \
+    printf '%s  %s\n' "$CANDIDATE_SHA256" /tmp/payment-diagnostics.gem | sha256sum --check && \
+    CANDIDATE_VERSION="$CANDIDATE_VERSION" CANDIDATE_SHA256="$CANDIDATE_SHA256" ruby -rrubygems/package -e 's=Gem::Package.new("/tmp/payment-diagnostics.gem").spec; v=ENV.fetch("CANDIDATE_VERSION"); abort unless /\A\d+\.\d+\.\d+(?:\.[a-z0-9.]+)?\z/.match?(v) && s.name == "ap2_mandate_verifier" && s.version.to_s == v; %w[Gemfile.purchase Gemfile.purchase.lock].each { |p| text=File.read(p); abort unless text.include?("1.6.0"); text=text.gsub(/(ap2_mandate_verifier[^\n]*?)1\.6\.0/, "\\1#{v}"); text=text.gsub(/(ap2_mandate_verifier[^\n]*sha256=)[0-9a-f]{64}/, "\\1#{ENV.fetch("CANDIDATE_SHA256")}"); File.write(p,text) }' && \
+    bundle_path="$(ruby -rbundler -e 'print Bundler.bundle_path')" && \
+    test -n "$bundle_path" && \
+    GEM_HOME="$bundle_path" GEM_PATH="$bundle_path" gem install --local --no-document /tmp/payment-diagnostics.gem && \
+    BUNDLE_FROZEN=true bundle check && \
+    EXPECTED_CANDIDATE_VERSION="$CANDIDATE_VERSION" bundle exec ruby test/payment_diagnostics_installed_check.rb && \
+    rm /tmp/payment-diagnostics.gem
+USER 10001:10001

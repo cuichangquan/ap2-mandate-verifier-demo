@@ -1,8 +1,8 @@
 [English](README.md) | [日本語](README.ja.md)
 
-# AP2 Ruby SDK 1.6.0: ローカル学習デモ
+# AP2 Ruby SDK 1.7.0: ローカル学習デモ
 
-公開Gem **ap2_mandate_verifier 1.6.0**で、署名付き購入承認、Checkout・Payment Mandate、Receiptを試します。ブラウザ画面とRubyの例を通じて、Agentに許された購入内容、販売者による権限の検証、購入側による結果確認を学べます。
+公開Gem **ap2_mandate_verifier 1.7.0**で、署名付き購入承認、Checkout・Payment Mandate、Receiptを試します。ブラウザ画面とRubyの例を通じて、Agentに許された購入内容、販売者による権限の検証、購入側による結果確認を学べます。
 
 **データ・鍵・決済処理はすべて合成です。実際のお金は動きません。検証成功と決済成功は別です。** SDKはフレームワーク非依存で、このリポジトリのブラウザ画面だけがRailsを使います。
 
@@ -66,7 +66,7 @@ x86_64ホストでは`DEMO_ARCH=amd64`を選びます。**http://127.0.0.1:3000/
 
 ## A2A × AP2購入デモを起動する
 
-別のCompose構成で公開Gem`ap2_mandate_verifier 1.6.0`と`a2a-rails 0.3.0`を使います。どちらのGemも変更しません。authority・buyer・sellerは別プロセスで動き、Agent間はローカルの実HTTPSで通信します。
+別のCompose構成で公開Gem`ap2_mandate_verifier 1.7.0`と`a2a-rails 0.3.0`を使います。どちらのGemも変更しません。authority・buyer・sellerは別プロセスで動き、Agent間はローカルの実HTTPSで通信します。
 
 ```sh
 export COMPOSE_PROJECT_NAME=ap2-purchase-demo
@@ -155,9 +155,9 @@ sh test/purchase_docker_validation.sh
 
 ## 固定環境と出所
 
-デモはMRI **4.0.9**、Bundler **4.0.20**、railties/actionpack **8.1.4.1**、Puma **6.6.1**、Minitest **5.27.0**を固定しています。Verifierは **1.6.0**、依存はJSON **2.19.9**、JWT **3.3.0**、base64 **0.3.0**、OpenSSL gem **4.0.2**、Digest **3.2.1**です。architecture別の公式Ruby digestとfrozen lockfileを維持しています。SDK単体のMRI 3.4.12／4.0.9対応と、このRailsデモのMRI 4.0.9固定は別です。他のネイティブOS／Rubyの組み合わせはここでは保証しません。 フレームワーク更新の影響を切り分けるため、Railsの互換性設定は `config.load_defaults 8.0` を維持します。8.1のデフォルト設定への移行は別の変更として扱います。
+デモはMRI **4.0.9**、Bundler **4.0.20**、railties/actionpack **8.1.4.1**、Puma **6.6.1**、Minitest **5.27.0**を固定しています。Verifierは **1.7.0**、依存はJSON **2.19.9**、JWT **3.3.0**、base64 **0.3.0**、OpenSSL gem **4.0.2**、Digest **3.2.1**です。architecture別の公式Ruby digestとfrozen lockfileを維持しています。SDK単体のMRI 3.4.12／4.0.9対応と、このRailsデモのMRI 4.0.9固定は別です。他のネイティブOS／Rubyの組み合わせはここでは保証しません。 フレームワーク更新の影響を切り分けるため、Railsの互換性設定は `config.load_defaults 8.0` を維持します。8.1のデフォルト設定への移行は別の変更として扱います。
 
-通常Dockerfileは公開Gemの **186,368 bytes** とSHA256 `62de85123e1379c538c9c4302b71a9c55c590162591169a4e335aaa03a8991f8`を導入前に検査し、同じbytesをBundlerに渡します。全 **68** ファイルのinstalled／archive一致、依存、Ruby要件、source外からのロードも確認します。Gemは再buildしません。リリースsource [`964e572`](https://github.com/cuichangquan/ap2-mandate-verifier/tree/964e572dc16d886561293cf90ddb9e2c927346bf)は、レビュー済み候補`98f7325a9dd0ee06739fe95e1306abe9b1c6ee5d`と同じtree `c9a9faaec045a9854fded3c1b4db375332a5fa57`です。取得・provider・依存の失敗時は、checksumやlockを緩めずに停止します。
+通常Dockerfileは公開Gemの **208,384 bytes** とSHA256 `2a3da0706313fd6ef6bf05dd0aed2f05899a5690b42568b3ebd814b41ad17140`を導入前に検査し、同じbytesをBundlerに渡します。全 **75** ファイルのinstalled／archive一致、依存、Ruby要件、source外からのロードも確認します。Gemは再buildしません。1.6.0の公開記録は履歴として保持します。取得・依存の失敗時はchecksumやlockを緩めず停止します。公開物の照合と現在commitの検証結果は切替PRで確認してください。
 
 `ScenarioVerifier`は署名入力のprepare・保存・restore・verifyを、独立した最新の業務状態に照らして行います。保存したbinding／digestを現在値に修復せず、提出データから信頼鍵や正規注文を推測しません。通常fixtureの固定時計は`1800000000`、期限切れは`1800000101`です。
 
@@ -165,8 +165,14 @@ sh test/purchase_docker_validation.sh
 
 ### 過去の候補build
 
-通常利用は上記の公開Gem用Dockerfileで完結します。`Dockerfile.candidate`、`Gemfile.candidate`、専用lockfileは、過去の **0.6.0** source比較手順として残しています。現行1.6.0のbuild手順でも、公開Gem bytesの証明でもありません。そのlockfileを通常起動に混ぜないでください。以前の記録は[履歴（英語／日本語）](docs/HISTORY.md)、[0.6.0複数明細候補（日本語）](docs/MULTI_ITEM_CANDIDATE.md)、[さらに古い候補（英語・一部日本語のラベル）](CANDIDATE.md)に残しています。
+通常利用は上記の公開Gem用Dockerfileで完結します。`Dockerfile.candidate`、`Gemfile.candidate`、専用lockfileは、過去の **0.6.0** source比較手順として残しています。現行1.7.0のbuild手順でも、公開Gem bytesの証明でもありません。そのlockfileを通常起動に混ぜないでください。以前の記録は[履歴（英語／日本語）](docs/HISTORY.md)、[0.6.0複数明細候補（日本語）](docs/MULTI_ITEM_CANDIDATE.md)、[さらに古い候補（英語・一部日本語のラベル）](CANDIDATE.md)に残しています。
 
 ### 購入デモの起動準備とTLS更新
 
 リポジトリ直下で `COMPOSE_PROJECT_NAME=ap2-purchase-demo` を毎回同じ値にし、`sh bin/purchase-demo start` で起動、`status` または `diagnose` で診断します。`rotate` は全役割を停止してTLS一式を更新し、購入データを保持して実通信を確認します。中断後は `recover` を使います。更新に `down -v` は使いません。[最短コマンド・保持するデータ・失敗時の復旧](docs/PURCHASE_DEMO.ja.md)を参照してください。
+
+## Payment結果の診断と候補Gem検証
+
+[Payment結果の診断と候補Gem検証](docs/PAYMENT_DIAGNOSTICS.ja.md)
+
+公開配布物の照合と検証上の制約は[1.7.0検証記録](docs/PUBLISHED_170.md)、当該HEADのCIはPR #39を参照してください。

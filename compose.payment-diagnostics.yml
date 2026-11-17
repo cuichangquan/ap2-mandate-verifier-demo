@@ -1,0 +1,10 @@
+# Only use with an isolated COMPOSE_PROJECT_NAME. Never replace a running stack.
+services:
+  init:
+    image: ${PAYMENT_DIAGNOSTICS_IMAGE:-ap2-purchase-diagnostics:candidate}
+  authority:
+    image: ${PAYMENT_DIAGNOSTICS_IMAGE:-ap2-purchase-diagnostics:candidate}
+  buyer:
+    image: ${PAYMENT_DIAGNOSTICS_IMAGE:-ap2-purchase-diagnostics:candidate}
+  seller:
+    image: ${PAYMENT_DIAGNOSTICS_IMAGE:-ap2-purchase-diagnostics:candidate}
