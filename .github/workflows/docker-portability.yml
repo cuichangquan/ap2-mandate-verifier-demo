@@ -69,16 +69,19 @@ jobs:
         run: |
           for image in ap2-demo:verify ap2-acceptance:verify; do
             docker run --rm --network none --cpus 1 --memory 512m --pids-limit 128 -e EXPECTED_CPU="$MACHINE" "$image" \
-              timeout 30 ruby -rrbconfig -e 'abort unless `uname -m`.strip == ENV.fetch("EXPECTED_CPU") && RbConfig::CONFIG.fetch("host_cpu") == ENV.fetch("EXPECTED_CPU")'
+              timeout 30 ruby -rrbconfig -e 'puts RUBY_DESCRIPTION; abort unless RUBY_ENGINE == "ruby" && RUBY_VERSION == "4.0.10" && `uname -m`.strip == ENV.fetch("EXPECTED_CPU") && RbConfig::CONFIG.fetch("host_cpu") == ENV.fetch("EXPECTED_CPU")'
           done
           docker run --rm --network none --cpus 1 --memory 512m --pids-limit 128 ap2-demo:verify timeout 900 sh test/docker_validation.sh normal
           docker run --rm --network none --cpus 1 --memory 512m --pids-limit 128 ap2-acceptance:verify timeout 600 sh test/docker_validation.sh acceptance
       - name: Build and exercise isolated A2A AP2 purchase demo
         env:
           ARCH: ${{ matrix.arch }}
+          MACHINE: ${{ matrix.machine }}
           COMPOSE_PROJECT_NAME: purchase-ci-${{ github.run_id }}
         run: |
           timeout 900 docker build --no-cache --platform "linux/$ARCH" -f Dockerfile.purchase -t ap2-purchase-demo:local .
+          docker run --rm --network none --cpus 1 --memory 512m --pids-limit 128 -e EXPECTED_CPU="$MACHINE" ap2-purchase-demo:local \
+            timeout 30 ruby -rrbconfig -e 'puts RUBY_DESCRIPTION; abort unless RUBY_ENGINE == "ruby" && RUBY_VERSION == "4.0.10" && `uname -m`.strip == ENV.fetch("EXPECTED_CPU") && RbConfig::CONFIG.fetch("host_cpu") == ENV.fetch("EXPECTED_CPU")'
           trap 'docker compose -f compose.purchase.yml down --volumes --remove-orphans' EXIT
           docker compose -f compose.purchase.yml up -d --no-build
           for attempt in $(seq 1 30); do

@@ -1,7 +1,7 @@
 # Fixed local-demo environment; availability and provider compatibility are environment-specific.
 ARG TARGETARCH
-FROM ruby:4.0.9-trixie@sha256:42c18f0c9807ba1349c0253617d7f08ef98b815463b2f7785d97c4efdfd80f4d AS base-arm64
-FROM ruby:4.0.9-trixie@sha256:d1b33477de075536be34e1f50a15501c35151c380baba5e55a8c2b0b84ec9c7c AS base-amd64
+FROM ruby:4.0.10-trixie@sha256:a78157a2cb8de55f7605b64538c8ffdc1ee15e2664065793d839250755e7cacc AS base-arm64
+FROM ruby:4.0.10-trixie@sha256:d07e1fa51948cd92c126b019e7b7473af301440a807437fb2f617b6b005af8b1 AS base-amd64
 FROM base-${TARGETARCH}
 WORKDIR /demo
 COPY Gemfile Gemfile.lock ./

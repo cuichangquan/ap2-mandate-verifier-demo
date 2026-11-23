@@ -155,7 +155,7 @@ sh test/purchase_docker_validation.sh
 
 ## 固定環境と出所
 
-デモはMRI **4.0.9**、Bundler **4.0.20**、railties/actionpack **8.1.4.1**、Puma **6.6.1**、Minitest **5.27.0**を固定しています。Verifierは **1.7.0**、依存はJSON **2.19.9**、JWT **3.3.0**、base64 **0.3.0**、OpenSSL gem **4.0.2**、Digest **3.2.1**です。architecture別の公式Ruby digestとfrozen lockfileを維持しています。SDK単体のMRI 3.4.12／4.0.9対応と、このRailsデモのMRI 4.0.9固定は別です。他のネイティブOS／Rubyの組み合わせはここでは保証しません。 フレームワーク更新の影響を切り分けるため、Railsの互換性設定は `config.load_defaults 8.0` を維持します。8.1のデフォルト設定への移行は別の変更として扱います。
+デモはMRI **4.0.10**、Bundler **4.0.20**、railties/actionpack **8.1.4.1**、Puma **6.6.1**、Minitest **5.27.0**を固定しています。Verifierは **1.7.0**、依存はJSON **2.19.9**、JWT **3.3.0**、base64 **0.3.0**、OpenSSL gem **4.0.2**、Digest **3.2.1**です。architecture別の公式Ruby digestとfrozen lockfileを維持しています。SDK単体のMRI 3.4.12／4.0.9対応と、このRailsデモのMRI 4.0.10固定は別です。他のネイティブOS／Rubyの組み合わせはここでは保証しません。 フレームワーク更新の影響を切り分けるため、Railsの互換性設定は `config.load_defaults 8.0` を維持します。8.1のデフォルト設定への移行は別の変更として扱います。
 
 通常Dockerfileは公開Gemの **208,384 bytes** とSHA256 `2a3da0706313fd6ef6bf05dd0aed2f05899a5690b42568b3ebd814b41ad17140`を導入前に検査し、同じbytesをBundlerに渡します。全 **75** ファイルのinstalled／archive一致、依存、Ruby要件、source外からのロードも確認します。Gemは再buildしません。1.6.0の公開記録は履歴として保持します。取得・依存の失敗時はchecksumやlockを緩めず停止します。公開物の照合と現在commitの検証結果は切替PRで確認してください。
 

@@ -9,7 +9,7 @@ This walkthrough starts with the browser, then runs Checkout and Payment in Ruby
 
 ## 1. Build the standard demo
 
-Requirements: Git and Docker with Compose support and Linux ARM64 or AMD64 containers. No host Ruby, Rails, database or Redis installation is needed. The build downloads official images and locked gems, so the first run can take longer than the walkthrough itself. This Rails demo pins MRI 4.0.9; standalone SDK support for MRI 3.4.12 is separate.
+Requirements: Git and Docker with Compose support and Linux ARM64 or AMD64 containers. No host Ruby, Rails, database or Redis installation is needed. The build downloads official images and locked gems, so the first run can take longer than the walkthrough itself. This Rails demo pins MRI 4.0.10; standalone SDK support for MRI 3.4.12 is separate.
 
 ```sh
 git clone https://github.com/cuichangquan/ap2-mandate-verifier-demo.git
