@@ -9,7 +9,7 @@
 
 ## 1. 通常デモをbuildする
 
-前提はGit、Compose対応のDocker、Linux ARM64またはAMD64コンテナです。ホストへのRuby・Rails・DB・Redisの導入は不要です。公式imageと固定Gemを取得するため、初回buildには操作手順そのものより時間がかかる場合があります。このRailsデモはMRI 4.0.9固定で、SDK単体のMRI 3.4.12対応とは別です。
+前提はGit、Compose対応のDocker、Linux ARM64またはAMD64コンテナです。ホストへのRuby・Rails・DB・Redisの導入は不要です。公式imageと固定Gemを取得するため、初回buildには操作手順そのものより時間がかかる場合があります。このRailsデモはMRI 4.0.10固定で、SDK単体のMRI 3.4.12対応とは別です。
 
 ```sh
 git clone https://github.com/cuichangquan/ap2-mandate-verifier-demo.git

@@ -1,5 +1,5 @@
 source "https://rubygems.org"
-ruby "4.0.9"
+ruby "4.0.10"
 gem "railties", "= 8.1.4.1"
 gem "actionpack", "= 8.1.4.1"
 gem "puma", "= 6.6.1"
